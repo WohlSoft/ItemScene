@@ -1,0 +1,17 @@
+*.user*
+*.obj
+*.o
+*.suo
+*.opensdf
+*.sdf
+*.aps
+*.upx
+Makefile*
+/bin
+/item-scene
+/ipch
+/DoxyDocs
+/Debug
+/Release
+
+
