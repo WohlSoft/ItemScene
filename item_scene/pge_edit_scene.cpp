@@ -390,6 +390,9 @@ void PGE_EditScene::wheelEvent(QWheelEvent *event)
 
     if( isAlt )
     {
+        QPoint scrPos = mapFromGlobal(QCursor::pos());
+        QPoint oldPos = mapToWorld(scrPos);
+
         if(event->delta() > 0)
             m_zoom += 0.1;
         else
@@ -397,6 +400,9 @@ void PGE_EditScene::wheelEvent(QWheelEvent *event)
 
         if(m_zoom <= 0.1)
             m_zoom = 0.1;
+
+        QPoint delta = mapToWorld(scrPos) - oldPos;
+        moveCameraUpdMouse(delta.x(), delta.y());
 
         repaint();
     }
