@@ -18,7 +18,7 @@ PGE_EditScene::PGE_EditScene(QWidget *parent) :
     m_moveInProcess(false),
     m_rectSelect(false),
     m_zoom(1.0),
-    m_isBusy(false),
+    m_isBusy(m_busyMutex, std::defer_lock),
     m_abortThread(false)
 {
     setFocusPolicy(Qt::StrongFocus);
@@ -104,13 +104,16 @@ void PGE_EditScene::moveEnd(bool /*esc*/)
 
 void PGE_EditScene::startInitAsync()
 {
-    m_isBusy = true;
+    m_isBusy.lock();
+    //m_isBusy = true;
     QtConcurrent::run<void>(this, &PGE_EditScene::initThread);
 }
 
 void PGE_EditScene::initThread()
 {
-    m_isBusy = true;
+    if(!m_isBusy.owns_lock())
+        m_isBusy.lock();
+
     bool offset = false;
     for(int y= -1024; y<32000; y+=32)
         for(int x= -1024; x<32000; x+=32)
@@ -120,8 +123,7 @@ void PGE_EditScene::initThread()
             offset = !offset;
         }
 threadEnd:
-
-    m_isBusy = false;
+    m_isBusy.unlock();
     metaObject()->invokeMethod(this, "repaint", Qt::QueuedConnection);
 }
 
@@ -233,9 +235,12 @@ void PGE_EditScene::closeEvent(QCloseEvent *event)
 {
     m_abortThread = true;
 
-    bool wasBusy = m_isBusy;
-    while(m_isBusy)
-        QThread::msleep(1);
+    bool wasBusy = m_isBusy.owns_lock();
+    if(wasBusy)
+    {
+        m_busyMutex.lock();
+        m_busyMutex.unlock();
+    }
 
     if(wasBusy)
         QMessageBox::information(this, "Closed", "Ouuuuch.... :-P");
@@ -244,7 +249,7 @@ void PGE_EditScene::closeEvent(QCloseEvent *event)
 
 void PGE_EditScene::mousePressEvent(QMouseEvent *event)
 {
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
         return;
 
     if(event->button() != Qt::LeftButton)
@@ -261,20 +266,22 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
     if( !isShift )
     {
         bool catched = false;
-        for(PGE_EditSceneItem &item : m_items)
+        PGE_EditItemList list;
+        queryItems(m_mouseOld.x(), m_mouseOld.y(), &list);
+        for(PGE_EditSceneItem *item : list)
         {
-            if( item.isTouches(m_mouseOld.x(), m_mouseOld.y()) )
+            if( item->isTouches(m_mouseOld.x(), m_mouseOld.y()) )
             {
                 catched = true;
                 if(isCtrl)
                 {
-                    toggleselect(item);
+                    toggleselect(*item);
                 }
                 else
-                if(!item.selected())
+                if(!item->selected())
                 {
                     clearSelection();
-                    select(item);
+                    select(*item);
                 }
                 break;
             }
@@ -299,11 +306,12 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
         m_ignoreRelease = true;
     }
     repaint();
+    setWindowTitle( QString("Selected items: %1").arg(m_selectedItems.size()) );
 }
 
 void PGE_EditScene::mouseMoveEvent(QMouseEvent *event)
 {
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
         return;
 
     if((event->buttons() & Qt::LeftButton) == 0)
@@ -325,7 +333,7 @@ void PGE_EditScene::mouseMoveEvent(QMouseEvent *event)
 
 void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
 {
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
         return;
     bool isShift =  (event->modifiers() & Qt::ShiftModifier) != 0;
     bool isCtrl  =  (event->modifiers() & Qt::ControlModifier) != 0;
@@ -362,26 +370,30 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         int right  = m_mouseBegin.x() > m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
         int top    = m_mouseBegin.y() < m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
         int bottom = m_mouseBegin.y() > m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
-        QRect selZone;
+        PGE_EditItemList list;
+        PGE_Rect<int> selZone;
+        RRect vizArea = {left, top, right, bottom};
         selZone.setCoords(left, top, right, bottom);
-        for(PGE_EditSceneItem &item : m_items)
+        queryItems(vizArea, &list);
+        for(PGE_EditSceneItem *item : list)
         {
-            if( item.isTouches(selZone) )
+            if( item->isTouches(selZone) )
             {
                 if(isShift && isCtrl)
-                    toggleselect(item);
+                    toggleselect(*item);
                 else
-                    select(item);
+                    select(*item);
             }
         }
         m_rectSelect=false;
         repaint();
     }
+    setWindowTitle( QString("Selected items: %1").arg(m_selectedItems.size()) );
 }
 
 void PGE_EditScene::wheelEvent(QWheelEvent *event)
 {
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
         return;
 
     bool isShift =  (event->modifiers() & Qt::ShiftModifier) != 0;
@@ -426,7 +438,7 @@ void PGE_EditScene::wheelEvent(QWheelEvent *event)
 void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
 {
     QPainter p(this);
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
     {
         p.setBrush(QBrush(Qt::black));
         p.setPen(QPen(Qt::black));
@@ -468,7 +480,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
 
 void PGE_EditScene::keyPressEvent(QKeyEvent *event)
 {
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
         return;
 
     bool isCtrl = (event->modifiers() & Qt::ControlModifier) != 0;
@@ -534,7 +546,7 @@ void PGE_EditScene::keyPressEvent(QKeyEvent *event)
 
 void PGE_EditScene::keyReleaseEvent(QKeyEvent *event)
 {
-    if(m_isBusy)
+    if(m_isBusy.owns_lock())
         return;
 
     switch(event->key())

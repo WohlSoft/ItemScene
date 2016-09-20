@@ -7,6 +7,7 @@
 #include <QSet>
 #include <QTimer>
 #include <QAtomicInteger>
+#include <mutex>
 
 #include "pge_edit_scene_item.h"
 #include "RTree.h"
@@ -59,7 +60,9 @@ public:
 
     QPoint          m_cameraPos;
     double          m_zoom;
-    QAtomicInteger<bool> m_isBusy;
+
+    std::mutex      m_busyMutex;
+    std::unique_lock<std::mutex> m_isBusy;
     QAtomicInteger<bool> m_abortThread;
 
     QPoint       mapToWorld(const QPoint &mousePos);

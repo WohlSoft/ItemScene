@@ -33,6 +33,7 @@ public:
     void setPos(T x, T y) { m_x = x; m_y = y; m_r = m_w+x; m_b = m_h+y; }
     void moveBy(T deltaX, T deltaY) { m_x += deltaX; m_y += deltaY; m_r = m_w+m_x; m_b = m_h+m_y; }
     void setRect(T x, T y, T w, T h) { m_x = x; m_y = y; m_w = w; m_h = h; m_r = m_x+m_w; m_b = m_y+m_h; }
+    void setCoords(T l, T t, T r, T b) { m_x = l; m_y = t; m_r = r; m_b = b; m_w = m_r-m_x; m_h = m_b-m_y; }
     QPoint topLeft() { return QPoint(m_x, m_y); }
 };
 
@@ -54,6 +55,7 @@ public:
 
     bool isTouches(int x, int y);
     bool isTouches(QRect &rect);
+    bool isTouches(PGE_Rect<int> &rect);
 
     virtual void paint(QPainter* painter, const QPoint &camera=QPoint(0, 0), const double &zoom=1.0);
 

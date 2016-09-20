@@ -57,6 +57,19 @@ bool PGE_EditSceneItem::isTouches(QRect &rect)
     return true;
 }
 
+bool PGE_EditSceneItem::isTouches(PGE_Rect<int> &rect)
+{
+    if(m_posRect.left() > rect.right())
+        return false;
+    if(m_posRect.right() < rect.left())
+        return false;
+    if(m_posRect.top() > rect.bottom())
+        return false;
+    if(m_posRect.bottom() < rect.top())
+        return false;
+    return true;
+}
+
 void PGE_EditSceneItem::paint(QPainter *painter, const QPoint &camera, const double &zoom)
 {
     painter->setBrush(QColor(Qt::white));
