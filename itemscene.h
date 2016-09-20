@@ -20,13 +20,9 @@ public:
 private slots:
     void on_actionAdd80_triggered();
     void on_actionAdd1000000_triggered();
-
     void on_actionPoke_triggered();
-
     void on_actionMoveto0x0_triggered();
-
     void on_actionMoveToM100xM100_triggered();
-
     void on_action_150_x_100_triggered();
 
 private:

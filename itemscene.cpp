@@ -3,6 +3,8 @@
 #include "ui_itemscene.h"
 
 #include <QMdiSubWindow>
+#include <QKeyEvent>
+#include <QDesktopWidget>
 
 ItemScene::ItemScene(QWidget *parent) :
     QMainWindow(parent),
@@ -12,6 +14,16 @@ ItemScene::ItemScene(QWidget *parent) :
 
     ui->dockWidget->setFocusPolicy(Qt::NoFocus);
     ui->dockWidget->setAttribute(Qt::WA_X11DoNotAcceptFocus);
+
+    //MainWindow Geometry;
+    QDesktopWidget* d = qApp->desktop();
+    QRect dg = d->availableGeometry(d->primaryScreen());
+
+    //Init default geometry of main window
+    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
+                                       QSize(dg.width()-100,
+                                             dg.height()-100), dg));
+
     update();
 }
 
@@ -22,25 +34,36 @@ ItemScene::~ItemScene()
 
 void ItemScene::keyPressEvent(QKeyEvent *event)
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
-    if(w)
+    switch(event->key())
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
-        if(e)
+    default:
+        QMainWindow::keyPressEvent(event);
+        break;
+    case Qt::Key_Left:
+    case Qt::Key_Right:
+    case Qt::Key_Up:
+    case Qt::Key_Down:
         {
-            e->setFocus();
-            e->keyPressEvent(event);
-            return;
+            QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+            if(w)
+            {
+                PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+                if(e)
+                {
+                    e->setFocus();
+                    e->keyPressEvent(event);
+                    return;
+                }
+            }
         }
     }
-    QMainWindow::keyPressEvent(event);
 }
 
 
 void ItemScene::on_actionAdd80_triggered()
 {
     QMdiSubWindow *w = ui->centralWidget->addSubWindow( new PGE_EditScene(ui->centralWidget) );
-    w->resize(500, 500);
+    w->resize(800, 600);
     PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
     bool offset = false;
     for(int y= -32; y<480; y+=32)
@@ -56,7 +79,7 @@ void ItemScene::on_actionAdd80_triggered()
 void ItemScene::on_actionAdd1000000_triggered()
 {
     QMdiSubWindow *w = ui->centralWidget->addSubWindow( new PGE_EditScene(ui->centralWidget) );
-    w->resize(500, 500);
+    w->resize(800, 600);
     PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
     w->setWindowTitle( QString("Million items") );
     w->show();
