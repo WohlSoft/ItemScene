@@ -10,6 +10,7 @@ Target features in comparison with QGraphicsScene:
 * Ability to globally disable element dragging while placing / erasing  / drag-scrolling
 * Accurate and quick camera positioing without any workarounds
 * Support of multi-threading while building in-scene data (therefore possible to draw "loading" without spawning extra dialog boxes and without freezing entire application)
+* Better processing zoom anchor (unlike QGraphicsScene, anchor by mouse will work when mouse is inside viewport, and will work from viewport center if mouse outsode (off-screen))
 
 # Download
 [Working demo for Win32 can be got here](http://wohlsoft.ru/docs/_laboratory/_Builds/win32/item-scene/item-scene-demo-win32.zip)
