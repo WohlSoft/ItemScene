@@ -448,11 +448,29 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         int right  = m_mouseBegin.x() > m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
         int top    = m_mouseBegin.y() < m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
         int bottom = m_mouseBegin.y() > m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
+
         PGE_EditItemList list;
         PGE_Rect<int> selZone;
         RRect vizArea = {left, top, right, bottom};
         selZone.setCoords(left, top, right, bottom);
         queryItems(vizArea, &list);
+        if(!list.isEmpty())
+        {
+            PGE_EditSceneItem* it = list.first();
+            if( it->isTouches(selZone) )
+            {
+                bool doSelect = it->m_selected;
+                if(isShift && isCtrl)
+                    doSelect=!doSelect;
+                else
+                    doSelect=true;
+                if(doSelect)
+                {
+                    PGE_Rect<int>&r = it->m_posRect;
+                    m_selectionRect.setCoords(r.left(), r.top(), r.right(), r.bottom());
+                }
+            }
+        }
         for(PGE_EditSceneItem *item : list)
         {
             if( item->isTouches(selZone) )
@@ -461,6 +479,8 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
                     toggleselect(*item);
                 else
                     select(*item);
+                if(item->m_selected)
+                    m_selectionRect.expandByRect(item->m_posRect);
             }
         }
         m_rectSelect=false;
@@ -542,6 +562,15 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
         QRect r = applyZoom(QRect(m_mouseBegin, m_mouseOld));
         p.drawRect(r);
     }
+
+    {
+        p.setBrush(QBrush(Qt::red));
+        p.setPen(QPen(Qt::darkRed));
+        p.setOpacity(0.2);
+        QRect r = applyZoom(m_selectionRect.toQRect());
+        p.drawRect(r);
+    }
+
     p.end();
 }
 

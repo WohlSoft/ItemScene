@@ -70,6 +70,46 @@ bool PGE_EditSceneItem::isTouches(PGE_Rect<int> &rect)
     return true;
 }
 
+int PGE_EditSceneItem::x()
+{
+    return m_posRect.x();
+}
+
+int PGE_EditSceneItem::y()
+{
+    return m_posRect.y();
+}
+
+int PGE_EditSceneItem::w()
+{
+    return m_posRect.w();
+}
+
+int PGE_EditSceneItem::h()
+{
+    return m_posRect.h();
+}
+
+int PGE_EditSceneItem::left()
+{
+    return m_posRect.left();
+}
+
+int PGE_EditSceneItem::top()
+{
+    return m_posRect.top();
+}
+
+int PGE_EditSceneItem::right()
+{
+    return m_posRect.right();
+}
+
+int PGE_EditSceneItem::bottom()
+{
+    return m_posRect.bottom();
+}
+
 void PGE_EditSceneItem::paint(QPainter *painter, const QPoint &camera, const double &zoom)
 {
     painter->setBrush(QColor(Qt::white));

@@ -49,6 +49,7 @@ public:
 
     typedef QSet<PGE_EditSceneItem*> SelectionMap;
     SelectionMap    m_selectedItems;
+    PGE_Rect<int>   m_selectionRect;
     QPoint          m_mouseOld;
     QPoint          m_mouseBegin;
     QPoint          m_mouseEnd;
