@@ -214,6 +214,16 @@ bool PGE_EditScene::onScreen(int x, int y)
     return (x >= 0) && (x < width() ) && (y >= 0) && (y < height() );
 }
 
+double PGE_EditScene::zoom()
+{
+    return m_zoom;
+}
+
+double PGE_EditScene::zoomPercents()
+{
+    return m_zoom * 100.0;
+}
+
 void PGE_EditScene::setZoom(double zoomFactor)
 {
     QPoint scrPos = mapFromGlobal(QCursor::pos());
@@ -224,14 +234,19 @@ void PGE_EditScene::setZoom(double zoomFactor)
 
     m_zoom = zoomFactor;
 
-    if(m_zoom <= 0.1)
-        m_zoom = 0.1;
+    if(m_zoom <= 0.05)
+        m_zoom = 0.05;
 
     QPoint delta = mapToWorld(anchor) - anchorPos;
     m_cameraPos -= delta;
     delta = mapToWorld(scrPos) - oldPos;
     moveCameraUpdMouse(delta.x(), delta.y());
     repaint();
+}
+
+void PGE_EditScene::setZoomPercent(double percentZoom)
+{
+    setZoom(percentZoom / 100.0);
 }
 
 void PGE_EditScene::addZoom(double zoomDelta)

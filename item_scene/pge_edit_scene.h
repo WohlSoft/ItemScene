@@ -180,7 +180,10 @@ public:
     bool onScreen(const QPoint &point);
     bool onScreen(int x, int y);
 
+    double zoom();
+    double zoomPercents();
     void setZoom(double zoomFactor);
+    void setZoomPercent(double percentZoom);
     void addZoom(double zoomDelta);
     void multipleZoom(double zoomDelta);
 
