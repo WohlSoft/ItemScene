@@ -134,3 +134,42 @@ void ItemScene::on_action_150_x_100_triggered()
         }
     }
 }
+
+void ItemScene::on_actionZoomIn_triggered()
+{
+    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    if(w)
+    {
+        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        if(e)
+        {
+            e->addZoom(0.1);
+        }
+    }
+}
+
+void ItemScene::on_actionZoomOut_triggered()
+{
+    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    if(w)
+    {
+        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        if(e)
+        {
+            e->addZoom(-0.1);
+        }
+    }
+}
+
+void ItemScene::on_actionResetZoom_triggered()
+{
+    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    if(w)
+    {
+        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        if(e)
+        {
+            e->setZoom(1.0);
+        }
+    }
+}

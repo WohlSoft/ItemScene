@@ -25,6 +25,12 @@ private slots:
     void on_actionMoveToM100xM100_triggered();
     void on_action_150_x_100_triggered();
 
+    void on_actionZoomIn_triggered();
+
+    void on_actionZoomOut_triggered();
+
+    void on_actionResetZoom_triggered();
+
 private:
     Ui::ItemScene *ui;
 };

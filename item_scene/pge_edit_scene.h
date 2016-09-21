@@ -53,6 +53,7 @@ public:
     QPoint          m_mouseBegin;
     QPoint          m_mouseEnd;
 
+    bool            m_mouseMoved;
     bool            m_ignoreMove;
     bool            m_ignoreRelease;
     bool            m_moveInProcess;
@@ -175,10 +176,20 @@ public:
         }
     } m_mover;
 
+    bool mouseOnScreen();
+    bool onScreen(const QPoint &point);
+    bool onScreen(int x, int y);
+
+    void setZoom(double zoomFactor);
+    void addZoom(double zoomDelta);
+    void multipleZoom(double zoomDelta);
+
     void moveCamera();
     void moveCamera(int deltaX, int deltaY);
     void moveCameraUpdMouse(int deltaX, int deltaY);
     void moveCameraTo(int x, int y);
+
+    bool selectOneAt(int x, int y, bool isCtrl=false);
 
     void closeEvent(QCloseEvent *event);
 

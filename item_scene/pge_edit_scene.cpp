@@ -13,6 +13,7 @@
 
 PGE_EditScene::PGE_EditScene(QWidget *parent) :
     QWidget(parent),
+    m_mouseMoved(false),
     m_ignoreMove(false),
     m_ignoreRelease(false),
     m_moveInProcess(false),
@@ -197,6 +198,52 @@ QRect PGE_EditScene::applyZoom(const QRect &r)
     return t;
 }
 
+bool PGE_EditScene::mouseOnScreen()
+{
+    return onScreen(mapFromGlobal(QCursor::pos()));
+}
+
+bool PGE_EditScene::onScreen(const QPoint &point)
+{
+    return (point.x() >= 0) && (point.x() < width() ) && (point.y() >= 0) && (point.y() < height() );
+}
+
+
+bool PGE_EditScene::onScreen(int x, int y)
+{
+    return (x >= 0) && (x < width() ) && (y >= 0) && (y < height() );
+}
+
+void PGE_EditScene::setZoom(double zoomFactor)
+{
+    QPoint scrPos = mapFromGlobal(QCursor::pos());
+    QPoint oldPos = mapToWorld(scrPos);
+
+    QPoint anchor    = onScreen(scrPos) ? scrPos : QPoint(width()/2, height()/2);
+    QPoint anchorPos = mapToWorld(anchor);
+
+    m_zoom = zoomFactor;
+
+    if(m_zoom <= 0.1)
+        m_zoom = 0.1;
+
+    QPoint delta = mapToWorld(anchor) - anchorPos;
+    m_cameraPos -= delta;
+    delta = mapToWorld(scrPos) - oldPos;
+    moveCameraUpdMouse(delta.x(), delta.y());
+    repaint();
+}
+
+void PGE_EditScene::addZoom(double zoomDelta)
+{
+    setZoom(m_zoom + zoomDelta);
+}
+
+void PGE_EditScene::multipleZoom(double zoomDelta)
+{
+    setZoom(m_zoom * zoomDelta);
+}
+
 void PGE_EditScene::moveCamera()
 {
     moveCamera(m_mover.speedX, m_mover.speedY);
@@ -231,6 +278,32 @@ void PGE_EditScene::moveCameraTo(int x, int y)
     repaint();
 }
 
+bool PGE_EditScene::selectOneAt(int x, int y, bool isCtrl)
+{
+    bool catched = false;
+    PGE_EditItemList list;
+    queryItems(x, y, &list);
+    for(PGE_EditSceneItem *item : list)
+    {
+        if( item->isTouches(x, y) )
+        {
+            catched = true;
+            if(isCtrl)
+            {
+                toggleselect(*item);
+            }
+            else
+            if(!item->selected())
+            {
+                clearSelection();
+                select(*item);
+            }
+            break;
+        }
+    }
+    return catched;
+}
+
 void PGE_EditScene::closeEvent(QCloseEvent *event)
 {
     m_abortThread = true;
@@ -259,33 +332,15 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
 
     m_mouseBegin = pos;
     m_mouseOld   = pos;
+    m_mouseMoved = false;
 
     bool isShift =  (event->modifiers() & Qt::ShiftModifier) != 0;
     bool isCtrl =   (event->modifiers() & Qt::ControlModifier) != 0;
 
     if( !isShift )
     {
-        bool catched = false;
-        PGE_EditItemList list;
-        queryItems(m_mouseOld.x(), m_mouseOld.y(), &list);
-        for(PGE_EditSceneItem *item : list)
-        {
-            if( item->isTouches(m_mouseOld.x(), m_mouseOld.y()) )
-            {
-                catched = true;
-                if(isCtrl)
-                {
-                    toggleselect(*item);
-                }
-                else
-                if(!item->selected())
-                {
-                    clearSelection();
-                    select(*item);
-                }
-                break;
-            }
-        }
+        bool catched = selectOneAt(m_mouseOld.x(), m_mouseOld.y(), isCtrl);
+
         if(!catched && !isCtrl)
             clearSelection();
         else
@@ -328,6 +383,7 @@ void PGE_EditScene::mouseMoveEvent(QMouseEvent *event)
         moveSelection(-delta.x(), -delta.y());
     }
     m_mouseOld = pos;
+    m_mouseMoved = true;
     repaint();
 }
 
@@ -364,6 +420,13 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         return;
 
     m_mouseEnd = pos;
+    if( !isShift && !isCtrl && (!m_selectedItems.isEmpty()) && (!m_mouseMoved) )
+    {
+        clearSelection();
+        selectOneAt(m_mouseOld.x(), m_mouseOld.y());
+        repaint();
+    }
+    else
     if(m_rectSelect)
     {
         int left   = m_mouseBegin.x() < m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
@@ -402,21 +465,10 @@ void PGE_EditScene::wheelEvent(QWheelEvent *event)
 
     if( isAlt )
     {
-        QPoint scrPos = mapFromGlobal(QCursor::pos());
-        QPoint oldPos = mapToWorld(scrPos);
-
         if(event->delta() > 0)
-            m_zoom += 0.1;
+            addZoom(0.1);
         else
-            m_zoom -= 0.1;
-
-        if(m_zoom <= 0.1)
-            m_zoom = 0.1;
-
-        QPoint delta = mapToWorld(scrPos) - oldPos;
-        moveCameraUpdMouse(delta.x(), delta.y());
-
-        repaint();
+            addZoom(-0.1);
     }
     else
     if( isCtrl )
