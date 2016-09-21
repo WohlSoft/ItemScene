@@ -61,6 +61,7 @@ void PGE_EditScene::moveSelection(int deltaX, int deltaY)
         unregisterElement(item);
         registerElement(item);
     }
+    m_selectionRect.moveBy(deltaX, deltaY);
 }
 
 void PGE_EditScene::select(PGE_EditSceneItem &item)
@@ -563,6 +564,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
         p.drawRect(r);
     }
 
+    if(m_moveInProcess)
     {
         p.setBrush(QBrush(Qt::red));
         p.setPen(QPen(Qt::darkRed));
