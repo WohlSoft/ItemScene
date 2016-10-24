@@ -19,20 +19,68 @@ public:
     explicit PGE_EditScene(QWidget *parent = 0);
     virtual ~PGE_EditScene();
 
+    /**
+     * @brief Creates a new rectangular body
+     * @param x Position X
+     * @param y Position Y
+     */
     void addRect(int x, int y);
 
+    /**
+     * @brief Clear selection list
+     */
     void clearSelection();
+    /**
+     * @brief Move all selected bodies by relative offset
+     * @param deltaX Offset X
+     * @param deltaY Offset Y
+     */
     void moveSelection(int deltaX, int deltaY);
 
+    /**
+     * @brief Calculate size of abstract rectangular zone
+     */
+    void captureSelectionRect();
+
+    /**
+     * @brief Add element into selection list
+     * @param item reference to scene element
+     */
     void select(PGE_EditSceneItem& item);
+    /**
+     * @brief Remove element from selection list
+     * @param item reference to scene element
+     */
     void deselect(PGE_EditSceneItem& item);
+    /**
+     * @brief Change element's selection state to opposite
+     * @param item reference to scene element
+     */
     void toggleselect(PGE_EditSceneItem& item);
+    /**
+     * @brief Set selection state of the element
+     * @param item reference to scene element
+     * @param selected selection state flag
+     */
     void setItemSelected(PGE_EditSceneItem& item, bool selected);
 
+    /**
+     * @brief Begin elements moving by mouse
+     */
     void moveStart();
+    /**
+     * @brief End elements moving by mouse
+     * @param esc Deselect all elements and return to their initial positions
+     */
     void moveEnd(bool esc=false);
 
+    /**
+     * @brief Begin asynchronius initializing process (scene window will be inactive, but application can be used)
+     */
     virtual void startInitAsync();
+    /**
+     * @brief Initializing processing function (running in the separated thread)
+     */
     virtual void initThread();
 
 
@@ -42,32 +90,65 @@ public:
     typedef int RPoint[2];
     IndexTree m_tree;
     struct RRect{int l; int t; int r; int b;};
+    /**
+     * @brief Collect elements in the rectangular area
+     * @param zone Rectangular area to collect elements
+     * @param resultList Pointer to list where collected elements are will be stored
+     */
     void queryItems(RRect &zone,  PGE_EditItemList *resultList);
+    /**
+     * @brief Collect elements in the specific point
+     * @param x Position X
+     * @param y Position Y
+     * @param resultList Pointer to list where collected elements are will be stored
+     */
     void queryItems(int x, int y, PGE_EditItemList *resultList);
+    /**
+     * @brief Register element in the RTree
+     * @param item Pointer to element to register
+     */
     void registerElement(PGE_EditSceneItem *item);
+    /**
+     * @brief Unregister element from the RTree
+     * @param item Pointer to element to unregister
+     */
     void unregisterElement(PGE_EditSceneItem *item);
 
     typedef QSet<PGE_EditSceneItem*> SelectionMap;
+    //! Map of selected elements
     SelectionMap    m_selectedItems;
+    //! Rectangular area around selected elements
     PGE_Rect<int>   m_selectionRect;
+    //! Previous mouse position
     QPoint          m_mouseOld;
+    //! Mouse position since button press
     QPoint          m_mouseBegin;
+    //! Mouse position since button releasing
     QPoint          m_mouseEnd;
 
+    //! Is mouse moved after button pressing
     bool            m_mouseMoved;
+    //! Ignore mouse move event until button release
     bool            m_ignoreMove;
+    //! Ignore mouse release event until button release (will be skipped with resetting this flag)
     bool            m_ignoreRelease;
+    //! Is elements moving in process
     bool            m_moveInProcess;
+    //! Is rectangular selection in process
     bool            m_rectSelect;
 
+    //! Camera position
     QPoint          m_cameraPos;
+    //! Zoom factor
     double          m_zoom;
 
     std::mutex      m_busyMutex;
     std::unique_lock<std::mutex> m_isBusy;
     QAtomicInteger<bool> m_abortThread;
 
+    //! Map relative mouse cursor position to world coordinates
     QPoint       mapToWorld(const QPoint &mousePos);
+    //! Map world rectangle coordinates to screen with applying zoom factor
     QRect        applyZoom(const QRect &r);
 
     struct Mover

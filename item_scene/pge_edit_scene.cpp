@@ -64,6 +64,11 @@ void PGE_EditScene::moveSelection(int deltaX, int deltaY)
     m_selectionRect.moveBy(deltaX, deltaY);
 }
 
+void PGE_EditScene::captureSelectionRect()
+{
+    //TODO!!!
+}
+
 void PGE_EditScene::select(PGE_EditSceneItem &item)
 {
     item.m_selected = true;
@@ -389,6 +394,7 @@ void PGE_EditScene::mouseMoveEvent(QMouseEvent *event)
         return;
 
     QPoint pos = mapToWorld(event->pos());
+    bool doRepaint = false;
 
     if(m_ignoreMove)
         return;
@@ -397,22 +403,33 @@ void PGE_EditScene::mouseMoveEvent(QMouseEvent *event)
     if(!m_rectSelect)
     {
         moveSelection(-delta.x(), -delta.y());
+        doRepaint |= true;
     }
+
+    if(m_moveInProcess || m_rectSelect)
+        doRepaint |= true;
+
     m_mouseOld = pos;
     m_mouseMoved = true;
-    repaint();
+
+    if(doRepaint)
+        repaint();
 }
 
 void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
 {
     if(m_isBusy.owns_lock())
         return;
+    bool doRepaint=false;
     bool isShift =  (event->modifiers() & Qt::ShiftModifier) != 0;
     bool isCtrl  =  (event->modifiers() & Qt::ControlModifier) != 0;
     QPoint pos = mapToWorld(event->pos());
 
     if(m_moveInProcess)
+    {
         moveEnd(false);
+        doRepaint |= true;
+    }
 
     if( (event->button()==Qt::RightButton) && (event->buttons() == 0) )
     {
@@ -440,7 +457,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
     {
         clearSelection();
         selectOneAt(m_mouseOld.x(), m_mouseOld.y());
-        repaint();
+        doRepaint |= true;
     }
     else
     if(m_rectSelect)
@@ -485,9 +502,11 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
             }
         }
         m_rectSelect=false;
-        repaint();
+        doRepaint |= true;
     }
     setWindowTitle( QString("Selected items: %1").arg(m_selectedItems.size()) );
+    if(doRepaint)
+        repaint();
 }
 
 void PGE_EditScene::wheelEvent(QWheelEvent *event)
