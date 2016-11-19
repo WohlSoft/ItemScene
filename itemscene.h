@@ -2,6 +2,7 @@
 #define ITEMSCENE_H
 
 #include <QMainWindow>
+#include <QListWidgetItem>
 
 namespace Ui {
 class ItemScene;
@@ -24,12 +25,11 @@ private slots:
     void on_actionMoveto0x0_triggered();
     void on_actionMoveToM100xM100_triggered();
     void on_action_150_x_100_triggered();
-
     void on_actionZoomIn_triggered();
-
     void on_actionZoomOut_triggered();
-
     void on_actionResetZoom_triggered();
+
+    void on_listWidget_itemClicked(QListWidgetItem *item);
 
 private:
     Ui::ItemScene *ui;

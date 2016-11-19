@@ -6,27 +6,34 @@
 
 KeyDropper::KeyDropper(QWidget *parent) :
     QDockWidget(parent)
-{}
+{
+    setFocusPolicy(Qt::StrongFocus);
+    setFocusProxy(parent);
+}
 
 void KeyDropper::keyPressEvent(QKeyEvent *event)
 {
-    if(parent())
+    switch(event->key())
     {
-        ItemScene* s = qobject_cast<ItemScene*>(parent());
-        s->keyPressEvent(event);
-        qApp->setActiveWindow(s);
-        s->setFocus();
-        return;
+    case Qt::Key_Left:
+    case Qt::Key_Right:
+    case Qt::Key_Up:
+    case Qt::Key_Down:
+        if(parent())
+        {
+            ItemScene* s = qobject_cast<ItemScene*>(parent());
+            qApp->setActiveWindow(s);
+            s->setFocus(Qt::MouseFocusReason);
+            s->keyPressEvent(event);
+            return;
+        }
+    default: break;
     }
     QDockWidget::keyPressEvent(event);
 }
 
 void KeyDropper::keyReleaseEvent(QKeyEvent *event)
 {
-//    if(parent())
-//    {
-//        ItemScene* s = qobject_cast<ItemScene*>(parent());
-//        s->keyReleaseEvent(event);
-//    }
     QDockWidget::keyReleaseEvent(event);
 }
+

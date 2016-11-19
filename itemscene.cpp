@@ -12,9 +12,6 @@ ItemScene::ItemScene(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->dockWidget->setFocusPolicy(Qt::NoFocus);
-    ui->dockWidget->setAttribute(Qt::WA_X11DoNotAcceptFocus);
-
     //MainWindow Geometry;
     QDesktopWidget* d = qApp->desktop();
     QRect dg = d->availableGeometry(d->primaryScreen());
@@ -74,6 +71,7 @@ void ItemScene::on_actionAdd80_triggered()
         }
     w->setWindowTitle( windowTitle() + QString(" (totally items on this map: %1)").arg(e->m_items.count()) );
     w->show();
+    setFocusProxy(w);
 }
 
 void ItemScene::on_actionAdd1000000_triggered()
@@ -84,16 +82,18 @@ void ItemScene::on_actionAdd1000000_triggered()
     w->setWindowTitle( QString("Million items") );
     w->show();
     e->startInitAsync();
+    setFocusProxy(e);
 }
 
 void ItemScene::on_actionPoke_triggered()
 {
-    ui->dockWidget->show();
     ui->dockWidget->setFloating(true);
+    ui->dockWidget->show();
     ui->dockWidget->move(this->pos());
     ui->dockWidget->resize(150, 300);
-    qApp->setActiveWindow(this);
-    this->setFocus();
+    qApp->setActiveWindow(ui->dockWidget);
+    //qApp->setActiveWindow(this);
+    //this->setFocus();
 }
 
 void ItemScene::on_actionMoveto0x0_triggered()
@@ -172,4 +172,15 @@ void ItemScene::on_actionResetZoom_triggered()
             e->setZoom(1.0);
         }
     }
+}
+
+
+
+
+void ItemScene::on_listWidget_itemClicked(QListWidgetItem * /*item*/)
+{
+    ItemScene* s = qobject_cast<ItemScene*>(ui->dockWidget->parent());
+    qApp->setActiveWindow(s);
+    s->setFocus(Qt::MouseFocusReason);
+    return;
 }
