@@ -3,100 +3,245 @@
 
 #include <QRect>
 #include <cmath>
+#include <type_traits>
 
-template<class T>
+template <class T>
 class PGE_Rect
 {
-    T m_x; T m_y;
-    T m_w; T m_h;
-    T m_r; T m_b;
+        T m_x;
+        T m_y;
+        T m_width;
+        T m_height;
+        T m_right;
+        T m_bottom;
 
-public:
-    PGE_Rect(): m_x(0), m_y(0), m_w(0), m_h(0), m_r(0), m_b(0) {}
-    PGE_Rect(T x, T y, T w, T h) : m_x(x), m_y(y), m_w(w), m_h(h), m_r(x+w), m_b(m_r+m_b) {}
-    PGE_Rect(const PGE_Rect & r) : m_x(r.m_x), m_y(r.m_y), m_w(r.m_w), m_h(r.m_h), m_r(r.m_r), m_b(r.m_b) {}
+    public:
+        static_assert(std::is_arithmetic<T>::value,
+                      "Type of Rect must be arithmetic");
 
-    inline QRect toQRect() { return QRect(m_x, m_y, m_w, m_h); }
-    void reset() { m_x=0;m_y=0;m_w=0; m_h=0;m_r=0;m_b=0; }
+        PGE_Rect()
+            : PGE_Rect(0, 0, 0, 0)
+        {
+        }
+        PGE_Rect(T x, T y, T w, T h)
+            : m_x(x)
+            , m_y(y)
+            , m_width(w)
+            , m_height(h)
+            , m_right(x + w)
+            , m_bottom(m_right + m_bottom)
+        {
+        }
 
-    T x() { return m_x; }
-    void setX(T x) { m_x = x; m_r=x+m_w; }
+        inline QRect toQRect() const
+        {
+            return QRect(m_x, m_y, m_width, m_height);
+        }
+        inline void reset()
+        {
+            m_x = 0;
+            m_y = 0;
+            m_width = 0;
+            m_height = 0;
+            m_right = 0;
+            m_bottom = 0;
+        }
 
-    T y() { return m_y; }
-    void setY(T y) { m_y = y; m_b=y+m_h; }
+        T x() const
+        {
+            return m_x;
+        }
+        void setX(T x)
+        {
+            m_x = x;
+            m_right = x + m_width;
+        }
 
-    T w() { return m_w; }
-    T width() { return m_w; }
-    void setW(T w) { m_w = w; m_r=m_x+w; }
+        T y() const
+        {
+            return m_y;
+        }
+        void setY(T y)
+        {
+            m_y = y;
+            m_bottom = y + m_height;
+        }
 
-    T h() { return m_h; }
-    T height() { return m_h; }
-    void setH(T h) { m_h = h; m_b=m_y+h; }
+        T w() const
+        {
+            return m_width;
+        }
+        T width() const
+        {
+            return m_width;
+        }
+        void setW(T width)
+        {
+            m_width = width;
+            m_right = m_x + width;
+        }
 
-    T left()    { return m_x; }
-    T top()     { return m_y; }
-    T right()   { return m_r; }
-    T bottom()  { return m_b; }
+        T h() const
+        {
+            return m_height;
+        }
+        T height() const
+        {
+            return m_height;
+        }
+        void setH(T h)
+        {
+            m_height = h;
+            m_bottom = m_y + h;
+        }
 
-    void setLeft(T l)   { m_x=l; m_w = abs(m_r-m_x); }
-    void setRight(T r)  { m_r=r; m_w = abs(m_r-m_x); }
-    void setTop(T t)    { m_y=t; m_h = abs(m_b-m_y); }
-    void setBottom(T b) { m_b=b; m_h = abs(m_b-m_y); }
+        T left() const
+        {
+            return m_x;
+        }
+        T top() const
+        {
+            return m_y;
+        }
+        T right() const
+        {
+            return m_right;
+        }
+        T bottom() const
+        {
+            return m_bottom;
+        }
 
-    void expendLeft(T l)   { if(l<m_x) setLeft(l); }
-    void expendRight(T r)  { if(r>m_r) setRight(r); }
-    void expendTop(T t)    { if(t<m_y) setTop(t); }
-    void expendBottom(T b) { if(b>m_b) setBottom(b); }
+        void setLeft(T left)
+        {
+            m_x = left;
+            m_width = abs(m_right - m_x);
+        }
+        void setRight(T right)
+        {
+            m_right = right;
+            m_width = abs(m_right - m_x);
+        }
+        void setTop(T top)
+        {
+            m_y = top;
+            m_height = abs(m_bottom - m_y);
+        }
+        void setBottom(T bottom)
+        {
+            m_bottom = bottom;
+            m_height = abs(m_bottom - m_y);
+        }
 
-    void expandByRect(const PGE_Rect &rect)
-    {
-        if(rect.m_x < m_x) setLeft(rect.m_x);
-        if(rect.m_r > m_r) setRight(rect.m_r);
-        if(rect.m_y < m_y) setTop(rect.m_y);
-        if(rect.m_b > m_b) setBottom(rect.m_b);
-    }
+        void expendLeft(T left)
+        {
+            if(left < m_x)
+                setLeft(left);
+        }
+        void expendRight(T right)
+        {
+            if(right > m_right)
+                setRight(right);
+        }
+        void expendTop(T top)
+        {
+            if(top < m_y)
+                setTop(top);
+        }
+        void expendBottom(T bottom)
+        {
+            if(bottom > m_bottom)
+                setBottom(bottom);
+        }
 
-    void setPos(T x, T y) { m_x = x; m_y = y; m_r = m_w+x; m_b = m_h+y; }
-    void moveBy(T deltaX, T deltaY) { m_x += deltaX; m_y += deltaY; m_r = m_w+m_x; m_b = m_h+m_y; }
-    void setRect(T x, T y, T w, T h) { m_x = x; m_y = y; m_w = w; m_h = h; m_r = m_x+m_w; m_b = m_y+m_h; }
-    void setCoords(T l, T t, T r, T b) { m_x = l; m_y = t; m_r = r; m_b = b; m_w = abs(m_r-m_x); m_h = abs(m_b-m_y); }
-    QPoint topLeft() { return QPoint(m_x, m_y); }
+        void expandByRect(const PGE_Rect &rect)
+        {
+            if(rect.m_x < m_x)
+                setLeft(rect.m_x);
+
+            if(rect.m_right > m_right)
+                setRight(rect.m_right);
+
+            if(rect.m_y < m_y)
+                setTop(rect.m_y);
+
+            if(rect.m_bottom > m_bottom)
+                setBottom(rect.m_bottom);
+        }
+
+        void setPos(T x, T y)
+        {
+            m_x = x;
+            m_y = y;
+            m_right = m_width + x;
+            m_bottom = m_height + y;
+        }
+        void moveBy(T deltaX, T deltaY)
+        {
+            m_x += deltaX;
+            m_y += deltaY;
+            m_right = m_width + m_x;
+            m_bottom = m_height + m_y;
+        }
+        void setRect(T x, T y, T w, T h)
+        {
+            m_x = x;
+            m_y = y;
+            m_width = w;
+            m_height = h;
+            m_right = m_x + m_width;
+            m_bottom = m_y + m_height;
+        }
+        void setCoords(T l, T t, T r, T b)
+        {
+            m_x = l;
+            m_y = t;
+            m_right = r;
+            m_bottom = b;
+            m_width = abs(m_right - m_x);
+            m_height = abs(m_bottom - m_y);
+        }
+        QPoint topLeft() const
+        {
+            return QPoint(m_x, m_y);
+        }
 };
 
 class QPainter;
 class PGE_EditScene;
 class PGE_EditSceneItem
 {
-    friend class PGE_EditScene;
-    PGE_EditScene* m_scene;
-    bool m_selected;
+        friend class PGE_EditScene;
+        PGE_EditScene *m_scene;
+        bool m_selected;
 
-public:
-    explicit PGE_EditSceneItem(PGE_EditScene* parent);
-    PGE_EditSceneItem(const PGE_EditSceneItem &it);
-    virtual ~PGE_EditSceneItem();
+    public:
+        explicit PGE_EditSceneItem(PGE_EditScene *parent);
+        PGE_EditSceneItem(const PGE_EditSceneItem &it);
+        virtual ~PGE_EditSceneItem();
 
-    void setSelected(bool selected);
-    bool selected();
+        void setSelected(bool selected);
+        bool selected() const;
 
-    bool isTouches(int x, int y);
-    bool isTouches(QRect &rect);
-    bool isTouches(PGE_Rect<int> &rect);
+        bool isTouching(int x, int y) const;
+        bool isTouching(const QRect &rect) const;
+        bool isTouching(const PGE_Rect<int> &rect) const;
 
-    int x();
-    int y();
-    int w();
-    int h();
+        int x() const;
+        int y() const;
+        int w() const;
+        int h() const;
 
-    int left();
-    int top();
-    int right();
-    int bottom();
+        int left() const;
+        int top() const;
+        int right() const;
+        int bottom() const;
 
-    virtual void paint(QPainter* painter, const QPoint &camera=QPoint(0, 0), const double &zoom=1.0);
+        virtual void paint(QPainter *painter, const QPoint &camera = QPoint(0, 0),
+                           const double &zoom = 1.0);
 
-    PGE_Rect<int> m_posRect;
-    PGE_Rect<int> m_posRectTree;
+        PGE_Rect<int> m_posRect;
+        PGE_Rect<int> m_posRectTree;
 };
 
 #endif // PGE_EDIT_SCENE_ITEM_H

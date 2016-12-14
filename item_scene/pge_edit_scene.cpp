@@ -306,7 +306,7 @@ bool PGE_EditScene::selectOneAt(int x, int y, bool isCtrl)
     queryItems(x, y, &list);
     for(PGE_EditSceneItem *item : list)
     {
-        if( item->isTouches(x, y) )
+        if( item->isTouching(x, y) )
         {
             catched = true;
             if(isCtrl)
@@ -475,7 +475,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         if(!list.isEmpty())
         {
             PGE_EditSceneItem* it = list.first();
-            if( it->isTouches(selZone) )
+            if( it->isTouching(selZone) )
             {
                 bool doSelect = it->m_selected;
                 if(isShift && isCtrl)
@@ -491,7 +491,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         }
         for(PGE_EditSceneItem *item : list)
         {
-            if( item->isTouches(selZone) )
+            if( item->isTouching(selZone) )
             {
                 if(isShift && isCtrl)
                     toggleselect(*item);
