@@ -13,5 +13,8 @@ Makefile*
 /DoxyDocs
 /Debug
 /Release
-
+.qmake.stash
+moc_*.*
+ui_*.h
+build-*
 
