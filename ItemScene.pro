@@ -16,7 +16,9 @@ DESTDIR = $$PWD/bin
 CONFIG(release, debug|release):message(Release build!) #will print
 CONFIG(debug, debug|release):message(Debug build!) #no print
 
+!macx: {
 QMAKE_CXXFLAGS += -ffloat-store
+}
 
 SOURCES += main.cpp\
         itemscene.cpp \

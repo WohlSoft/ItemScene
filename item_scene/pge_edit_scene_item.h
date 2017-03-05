@@ -29,7 +29,7 @@ class PGE_Rect
             , m_width(w)
             , m_height(h)
             , m_right(x + w)
-            , m_bottom(m_right + m_bottom)
+            , m_bottom(y + h)
         {
         }
 
