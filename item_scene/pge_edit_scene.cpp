@@ -47,10 +47,9 @@ void PGE_EditScene::addRect(int x, int y)
 void PGE_EditScene::clearSelection()
 {
     for(PGE_EditSceneItem *item : m_selectedItems)
-    {
         item->m_selected = false;
-    }
     m_selectedItems.clear();
+    m_selectionRect.reset();
 }
 
 void PGE_EditScene::moveSelection(int deltaX, int deltaY)
@@ -66,7 +65,23 @@ void PGE_EditScene::moveSelection(int deltaX, int deltaY)
 
 void PGE_EditScene::captureSelectionRect()
 {
-    //TODO!!!
+    if(m_selectedItems.empty())
+    {
+        m_selectionRect.reset();
+        return;
+    }
+
+    bool first = true;
+    for(PGE_EditSceneItem *item : m_selectedItems)
+    {
+        if(first)
+        {
+            m_selectionRect = item->m_posRect;
+            first = false;
+        }
+        else
+            m_selectionRect.expandByRect(item->m_posRect);
+    }
 }
 
 void PGE_EditScene::select(PGE_EditSceneItem &item)
@@ -134,8 +149,6 @@ threadEnd:
     metaObject()->invokeMethod(this, "repaint", Qt::QueuedConnection);
 }
 
-
-
 static bool _TreeSearchCallback(PGE_EditSceneItem *item, void *arg)
 {
     PGE_EditScene::PGE_EditItemList *list = static_cast<PGE_EditScene::PGE_EditItemList * >(arg);
@@ -164,14 +177,8 @@ void PGE_EditScene::registerElement(PGE_EditSceneItem *item)
     PGE_Rect<int> &r = item->m_posRect;
     RPoint lt = { r.left(),  r.top() };
     RPoint rb = { r.right(), r.bottom() };
-    if(rb[0] < lt[0])
-    {
-        rb[0] = lt[0] + 1;
-    }
-    if(rb[1] < lt[1])
-    {
-        rb[1] = lt[1] + 1;
-    }
+    if(rb[0] < lt[0]) rb[0] = lt[0] + 1;
+    if(rb[1] < lt[1]) rb[1] = lt[1] + 1;
     m_tree.Insert(lt, rb, item);
     item->m_posRectTree = r;
 }
@@ -181,14 +188,8 @@ void PGE_EditScene::unregisterElement(PGE_EditSceneItem *item)
     PGE_Rect<int> &r = item->m_posRectTree;
     RPoint lt = { r.left(),  r.top() };
     RPoint rb = { r.right(), r.bottom()};
-    if(rb[0] < lt[0])
-    {
-        rb[0] = lt[0] + 1;
-    }
-    if(rb[1] < lt[1])
-    {
-        rb[1] = lt[1] + 1;
-    }
+    if(rb[0] < lt[0]) rb[0] = lt[0] + 1;
+    if(rb[1] < lt[1]) rb[1] = lt[1] + 1;
     m_tree.Remove(lt, rb, item);
 }
 
@@ -378,13 +379,12 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
         else if(catched)
         {
             moveStart();
+            captureSelectionRect();
         }
     }
 
     if((m_selectedItems.isEmpty() && !isCtrl) || isShift)
-    {
         m_rectSelect = true;
-    }
 
     if(isCtrl && !isShift)
     {
@@ -454,15 +454,23 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
     if(event->button() != Qt::LeftButton)
         return;
 
+    if(!isShift && isCtrl && !m_mouseMoved)
+        doRepaint |= true;
+
     bool skip = m_ignoreRelease;
 
     m_ignoreMove    = false;
     m_ignoreRelease = false;
 
     if(skip)
+    {
+        if(doRepaint)
+            repaint();
         return;
+    }
 
     m_mouseEnd = pos;
+
     if(!isShift && !isCtrl && (!m_selectedItems.isEmpty()) && (!m_mouseMoved))
     {
         clearSelection();

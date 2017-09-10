@@ -83,7 +83,6 @@ public:
      */
     virtual void initThread();
 
-
     typedef QList<PGE_EditSceneItem *> PGE_EditItemList;
     typedef RTree<PGE_EditSceneItem *, int, 2, int > IndexTree;
     QList<PGE_EditSceneItem> m_items;
