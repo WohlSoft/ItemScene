@@ -8,7 +8,7 @@ class KeyDropper : public QDockWidget
 {
     Q_OBJECT
 public:
-    explicit KeyDropper(QWidget* parent = 0);
+    explicit KeyDropper(QWidget *parent = 0);
     ~KeyDropper() {}
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);

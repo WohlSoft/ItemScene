@@ -13,13 +13,13 @@ ItemScene::ItemScene(QWidget *parent) :
     ui->setupUi(this);
 
     //MainWindow Geometry;
-    QDesktopWidget* d = qApp->desktop();
+    QDesktopWidget *d = qApp->desktop();
     QRect dg = d->availableGeometry(d->primaryScreen());
 
     //Init default geometry of main window
     setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
-                                       QSize(dg.width()-100,
-                                             dg.height()-100), dg));
+                                    QSize(dg.width() - 100,
+                                          dg.height() - 100), dg));
 
     update();
 }
@@ -40,46 +40,46 @@ void ItemScene::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Right:
     case Qt::Key_Up:
     case Qt::Key_Down:
+    {
+        QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
+        if(w)
         {
-            QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
-            if(w)
+            PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
+            if(e)
             {
-                PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
-                if(e)
-                {
-                    e->setFocus();
-                    e->keyPressEvent(event);
-                    return;
-                }
+                e->setFocus();
+                e->keyPressEvent(event);
+                return;
             }
         }
+    }
     }
 }
 
 
 void ItemScene::on_actionAdd80_triggered()
 {
-    QMdiSubWindow *w = ui->centralWidget->addSubWindow( new PGE_EditScene(ui->centralWidget) );
+    QMdiSubWindow *w = ui->centralWidget->addSubWindow(new PGE_EditScene(ui->centralWidget));
     w->resize(800, 600);
-    PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+    PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
     bool offset = false;
-    for(int y= -32; y<480; y+=32)
-        for(int x= -32; x<480; x+=32)
+    for(int y = -32; y < 480; y += 32)
+        for(int x = -32; x < 480; x += 32)
         {
             e->addRect(x,  y + (offset ? 16 : 0));
-            offset=!offset;
+            offset = !offset;
         }
-    w->setWindowTitle( windowTitle() + QString(" (totally items on this map: %1)").arg(e->m_items.count()) );
+    w->setWindowTitle(windowTitle() + QString(" (totally items on this map: %1)").arg(e->m_items.count()));
     w->show();
     setFocusProxy(w);
 }
 
 void ItemScene::on_actionAdd1000000_triggered()
 {
-    QMdiSubWindow *w = ui->centralWidget->addSubWindow( new PGE_EditScene(ui->centralWidget) );
+    QMdiSubWindow *w = ui->centralWidget->addSubWindow(new PGE_EditScene(ui->centralWidget));
     w->resize(800, 600);
-    PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
-    w->setWindowTitle( QString("Million items") );
+    PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
+    w->setWindowTitle(QString("Million items"));
     w->show();
     e->startInitAsync();
     setFocusProxy(e);
@@ -98,10 +98,10 @@ void ItemScene::on_actionPoke_triggered()
 
 void ItemScene::on_actionMoveto0x0_triggered()
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
     if(w)
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
         if(e)
         {
             e->moveCameraTo(0, 0);
@@ -111,10 +111,10 @@ void ItemScene::on_actionMoveto0x0_triggered()
 
 void ItemScene::on_actionMoveToM100xM100_triggered()
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
     if(w)
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
         if(e)
         {
             e->moveCameraTo(-128, -128);
@@ -124,10 +124,10 @@ void ItemScene::on_actionMoveToM100xM100_triggered()
 
 void ItemScene::on_action_150_x_100_triggered()
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
     if(w)
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
         if(e)
         {
             e->moveCameraTo(150, -128);
@@ -137,10 +137,10 @@ void ItemScene::on_action_150_x_100_triggered()
 
 void ItemScene::on_actionZoomIn_triggered()
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
     if(w)
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
         if(e)
         {
             e->addZoom(0.1);
@@ -150,10 +150,10 @@ void ItemScene::on_actionZoomIn_triggered()
 
 void ItemScene::on_actionZoomOut_triggered()
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
     if(w)
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
         if(e)
         {
             e->addZoom(-0.1);
@@ -163,10 +163,10 @@ void ItemScene::on_actionZoomOut_triggered()
 
 void ItemScene::on_actionResetZoom_triggered()
 {
-    QMdiSubWindow* w = ui->centralWidget->activeSubWindow();
+    QMdiSubWindow *w = ui->centralWidget->activeSubWindow();
     if(w)
     {
-        PGE_EditScene* e = qobject_cast<PGE_EditScene*>(w->widget());
+        PGE_EditScene *e = qobject_cast<PGE_EditScene *>(w->widget());
         if(e)
         {
             e->setZoom(1.0);
@@ -179,7 +179,7 @@ void ItemScene::on_actionResetZoom_triggered()
 
 void ItemScene::on_listWidget_itemClicked(QListWidgetItem * /*item*/)
 {
-    ItemScene* s = qobject_cast<ItemScene*>(ui->dockWidget->parent());
+    ItemScene *s = qobject_cast<ItemScene *>(ui->dockWidget->parent());
     qApp->setActiveWindow(s);
     s->setFocus(Qt::MouseFocusReason);
     return;

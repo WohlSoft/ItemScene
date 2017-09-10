@@ -46,23 +46,23 @@ public:
      * @brief Add element into selection list
      * @param item reference to scene element
      */
-    void select(PGE_EditSceneItem& item);
+    void select(PGE_EditSceneItem &item);
     /**
      * @brief Remove element from selection list
      * @param item reference to scene element
      */
-    void deselect(PGE_EditSceneItem& item);
+    void deselect(PGE_EditSceneItem &item);
     /**
      * @brief Change element's selection state to opposite
      * @param item reference to scene element
      */
-    void toggleselect(PGE_EditSceneItem& item);
+    void toggleselect(PGE_EditSceneItem &item);
     /**
      * @brief Set selection state of the element
      * @param item reference to scene element
      * @param selected selection state flag
      */
-    void setItemSelected(PGE_EditSceneItem& item, bool selected);
+    void setItemSelected(PGE_EditSceneItem &item, bool selected);
 
     /**
      * @brief Begin elements moving by mouse
@@ -72,7 +72,7 @@ public:
      * @brief End elements moving by mouse
      * @param esc Deselect all elements and return to their initial positions
      */
-    void moveEnd(bool esc=false);
+    void moveEnd(bool esc = false);
 
     /**
      * @brief Begin asynchronius initializing process (scene window will be inactive, but application can be used)
@@ -84,12 +84,18 @@ public:
     virtual void initThread();
 
 
-    typedef QList<PGE_EditSceneItem*> PGE_EditItemList;
-    typedef RTree<PGE_EditSceneItem*, int, 2, int > IndexTree;
+    typedef QList<PGE_EditSceneItem *> PGE_EditItemList;
+    typedef RTree<PGE_EditSceneItem *, int, 2, int > IndexTree;
     QList<PGE_EditSceneItem> m_items;
     typedef int RPoint[2];
     IndexTree m_tree;
-    struct RRect{int l; int t; int r; int b;};
+    struct RRect
+    {
+        int l;
+        int t;
+        int r;
+        int b;
+    };
     /**
      * @brief Collect elements in the rectangular area
      * @param zone Rectangular area to collect elements
@@ -114,7 +120,7 @@ public:
      */
     void unregisterElement(PGE_EditSceneItem *item);
 
-    typedef QSet<PGE_EditSceneItem*> SelectionMap;
+    typedef QSet<PGE_EditSceneItem *> SelectionMap;
     //! Map of selected elements
     SelectionMap    m_selectedItems;
     //! Rectangular area around selected elements
@@ -235,17 +241,17 @@ public:
         {
             speedX = 0;
             speedY = 0;
-            if( key(K_LEFT) ^ key(K_RIGHT) )
+            if(key(K_LEFT) ^ key(K_RIGHT))
             {
-                speedX = scrollStep *(key(K_LEFT) ? -1 : 1);
+                speedX = scrollStep * (key(K_LEFT) ? -1 : 1);
             }
 
-            if( key(K_UP) ^ key(K_DOWN) )
+            if(key(K_UP) ^ key(K_DOWN))
             {
-                speedY = scrollStep *(key(K_UP) ? -1 : 1);
+                speedY = scrollStep * (key(K_UP) ? -1 : 1);
             }
 
-            if( noKeys() )
+            if(noKeys())
                 timer.stop();
             else
             {
@@ -274,7 +280,7 @@ public:
     void moveCameraUpdMouse(int deltaX, int deltaY);
     void moveCameraTo(int x, int y);
 
-    bool selectOneAt(int x, int y, bool isCtrl=false);
+    bool selectOneAt(int x, int y, bool isCtrl = false);
 
     void closeEvent(QCloseEvent *event);
 

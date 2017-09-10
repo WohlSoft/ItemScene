@@ -4,8 +4,9 @@
 #include <QMainWindow>
 #include <QListWidgetItem>
 
-namespace Ui {
-class ItemScene;
+namespace Ui
+{
+    class ItemScene;
 }
 
 class ItemScene : public QMainWindow

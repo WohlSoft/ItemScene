@@ -13,7 +13,7 @@ public:
     ~PGE_ProxyStyle() {}
     int styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget, QStyleHintReturn *returnData) const
     {
-        if(hint==QStyle::SH_MenuBar_AltKeyNavigation)
+        if(hint == QStyle::SH_MenuBar_AltKeyNavigation)
             return 0;
         return QProxyStyle::styleHint(hint, option, widget, returnData);
     }
@@ -22,7 +22,7 @@ public:
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    a.setStyle( new PGE_ProxyStyle(a.style()) );
+    a.setStyle(new PGE_ProxyStyle(a.style()));
     ItemScene w;
     w.show();
 

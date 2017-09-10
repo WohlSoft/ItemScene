@@ -21,13 +21,14 @@ void KeyDropper::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Down:
         if(parent())
         {
-            ItemScene* s = qobject_cast<ItemScene*>(parent());
+            ItemScene *s = qobject_cast<ItemScene *>(parent());
             qApp->setActiveWindow(s);
             s->setFocus(Qt::MouseFocusReason);
             s->keyPressEvent(event);
             return;
-        }
-    default: break;
+        } /* fallthrough */
+    default:
+        break;
     }
     QDockWidget::keyPressEvent(event);
 }
