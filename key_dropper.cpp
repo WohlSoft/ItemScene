@@ -26,7 +26,7 @@ void KeyDropper::keyPressEvent(QKeyEvent *event)
             s->setFocus(Qt::MouseFocusReason);
             s->keyPressEvent(event);
             return;
-        } /* fallthrough */
+        }/* fallthrough */
     default:
         break;
     }

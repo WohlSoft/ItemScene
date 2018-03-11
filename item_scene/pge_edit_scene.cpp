@@ -32,7 +32,7 @@ PGE_EditScene::PGE_EditScene(QWidget *parent) :
 
 PGE_EditScene::~PGE_EditScene()
 {
-    m_tree.RemoveAll();
+    m_tree.clear();
     m_items.clear();
 }
 
@@ -52,13 +52,12 @@ void PGE_EditScene::clearSelection()
     m_selectionRect.reset();
 }
 
-void PGE_EditScene::moveSelection(int deltaX, int deltaY)
+void PGE_EditScene::moveSelection(int64_t deltaX, int64_t deltaY)
 {
     for(PGE_EditSceneItem *item : m_selectedItems)
     {
         item->m_posRect.moveBy(deltaX, deltaY);
-        unregisterElement(item);
-        registerElement(item);
+        updateElement(item);
     }
     m_selectionRect.moveBy(deltaX, deltaY);
 }
@@ -159,38 +158,30 @@ static bool _TreeSearchCallback(PGE_EditSceneItem *item, void *arg)
     return true;
 }
 
-void PGE_EditScene::queryItems(RRect &zone, PGE_EditScene::PGE_EditItemList *resultList)
+void PGE_EditScene::queryItems(PGE_Rect<int64_t> &zone, PGE_EditScene::PGE_EditItemList *resultList)
 {
-    RPoint lt = {zone.l, zone.t};
-    RPoint rb = {zone.r, zone.b};
-    m_tree.Search(lt, rb, _TreeSearchCallback, (void *)resultList);
+    m_tree.query(zone, _TreeSearchCallback, (void*)resultList);
 }
 
-void PGE_EditScene::queryItems(int x, int y, PGE_EditScene::PGE_EditItemList *resultList)
+void PGE_EditScene::queryItems(int64_t x, int64_t y, PGE_EditScene::PGE_EditItemList *resultList)
 {
-    RRect zone = {x, y, x + 1, y + 1};
-    queryItems(zone, resultList);
+    PGE_Rect<int64_t> z(x, y, 1, 1);
+    m_tree.query(z, _TreeSearchCallback, resultList);
 }
 
 void PGE_EditScene::registerElement(PGE_EditSceneItem *item)
 {
-    PGE_Rect<int> &r = item->m_posRect;
-    RPoint lt = { r.left(),  r.top() };
-    RPoint rb = { r.right(), r.bottom() };
-    if(rb[0] < lt[0]) rb[0] = lt[0] + 1;
-    if(rb[1] < lt[1]) rb[1] = lt[1] + 1;
-    m_tree.Insert(lt, rb, item);
-    item->m_posRectTree = r;
+    m_tree.insert(item);
+}
+
+void PGE_EditScene::updateElement(PGE_EditSceneItem *item)
+{
+    m_tree.update(item);
 }
 
 void PGE_EditScene::unregisterElement(PGE_EditSceneItem *item)
 {
-    PGE_Rect<int> &r = item->m_posRectTree;
-    RPoint lt = { r.left(),  r.top() };
-    RPoint rb = { r.right(), r.bottom()};
-    if(rb[0] < lt[0]) rb[0] = lt[0] + 1;
-    if(rb[1] < lt[1]) rb[1] = lt[1] + 1;
-    m_tree.Remove(lt, rb, item);
+    m_tree.remove(item);
 }
 
 
@@ -198,22 +189,22 @@ void PGE_EditScene::unregisterElement(PGE_EditSceneItem *item)
 
 
 
-QPoint PGE_EditScene::mapToWorld(const QPoint &mousePos)
+QPointF PGE_EditScene::mapToWorld(const QPointF &mousePos)
 {
-    QPoint w = mousePos;
-    w.setX(qRound(qreal(w.x()) / m_zoom));
-    w.setY(qRound(qreal(w.y()) / m_zoom));
+    QPointF w = mousePos;
+    w.setX(std::round(qreal(w.x()) / m_zoom));
+    w.setY(std::round(qreal(w.y()) / m_zoom));
     w += m_cameraPos;
     return w;
 }
 
-QRect PGE_EditScene::applyZoom(const QRect &r)
+QRectF PGE_EditScene::applyZoom(const QRectF &r)
 {
-    QRect t = r;
+    QRectF t = r;
     t.moveTo(t.topLeft() - m_cameraPos);
-    t.moveTo(qRound(qreal(t.x())*m_zoom), qRound(qreal(t.y())*m_zoom));
-    t.setWidth(qRound(qreal(t.width())*m_zoom));
-    t.setHeight(qRound(qreal(t.height())*m_zoom));
+    t.moveTo(std::round(qreal(t.x()) * m_zoom), std::round(qreal(t.y()) * m_zoom));
+    t.setWidth(std::round(qreal(t.width()) * m_zoom));
+    t.setHeight(std::round(qreal(t.height()) * m_zoom));
     return t;
 }
 
@@ -227,8 +218,12 @@ bool PGE_EditScene::onScreen(const QPoint &point)
     return (point.x() >= 0) && (point.x() < width()) && (point.y() >= 0) && (point.y() < height());
 }
 
+bool PGE_EditScene::onScreen(const QPointF &point)
+{
+    return (point.x() >= 0) && (point.x() < width()) && (point.y() >= 0) && (point.y() < height());
+}
 
-bool PGE_EditScene::onScreen(int x, int y)
+bool PGE_EditScene::onScreen(int64_t x, int64_t y)
 {
     return (x >= 0) && (x < width()) && (y >= 0) && (y < height());
 }
@@ -245,18 +240,18 @@ double PGE_EditScene::zoomPercents()
 
 void PGE_EditScene::setZoom(double zoomFactor)
 {
-    QPoint scrPos = mapFromGlobal(QCursor::pos());
-    QPoint oldPos = mapToWorld(scrPos);
+    QPoint  scrPos = mapFromGlobal(QCursor::pos());
+    QPointF oldPos = mapToWorld(scrPos);
 
-    QPoint anchor    = onScreen(scrPos) ? scrPos : QPoint(width() / 2, height() / 2);
-    QPoint anchorPos = mapToWorld(anchor);
+    QPoint  anchor    = onScreen(scrPos) ? scrPos : QPoint(width() / 2, height() / 2);
+    QPointF anchorPos = mapToWorld(anchor);
 
     m_zoom = zoomFactor;
 
     if(m_zoom <= 0.05)
         m_zoom = 0.05;
 
-    QPoint delta = mapToWorld(anchor) - anchorPos;
+    QPointF delta = mapToWorld(anchor) - anchorPos;
     m_cameraPos -= delta;
     delta = mapToWorld(scrPos) - oldPos;
     moveCameraUpdMouse(delta.x(), delta.y());
@@ -291,28 +286,28 @@ void PGE_EditScene::moveCamera(int deltaX, int deltaY)
     m_cameraPos.setY(m_cameraPos.y() + deltaY);
 }
 
-void PGE_EditScene::moveCameraUpdMouse(int deltaX, int deltaY)
+void PGE_EditScene::moveCameraUpdMouse(double deltaX, double deltaY)
 {
     if(m_moveInProcess || m_rectSelect)
     {
         m_mouseOld.setX(m_mouseOld.x() + deltaX);
         m_mouseOld.setY(m_mouseOld.y() + deltaY);
         if(m_moveInProcess)
-            moveSelection(deltaX, deltaY);
+            moveSelection(static_cast<int64_t>(deltaX), static_cast<int64_t>(deltaY));
     }
 }
 
-void PGE_EditScene::moveCameraTo(int x, int y)
+void PGE_EditScene::moveCameraTo(int64_t x, int64_t y)
 {
-    int deltaX = x - m_cameraPos.x();
-    int deltaY = y - m_cameraPos.y();
+    double deltaX = x - m_cameraPos.x();
+    double deltaY = y - m_cameraPos.y();
     m_cameraPos.setX(x);
     m_cameraPos.setY(y);
     moveCameraUpdMouse(deltaX, deltaY);
     repaint();
 }
 
-bool PGE_EditScene::selectOneAt(int x, int y, bool isCtrl)
+bool PGE_EditScene::selectOneAt(int64_t x, int64_t y, bool isCtrl)
 {
     bool catched = false;
     PGE_EditItemList list;
@@ -361,7 +356,7 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
     if(event->button() != Qt::LeftButton)
         return;
 
-    QPoint pos = mapToWorld(event->pos());
+    QPointF pos = mapToWorld(event->pos());
 
     m_mouseBegin = pos;
     m_mouseOld   = pos;
@@ -372,7 +367,7 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
 
     if(!isShift)
     {
-        bool catched = selectOneAt(m_mouseOld.x(), m_mouseOld.y(), isCtrl);
+        bool catched = selectOneAt(D_TO_INT64(m_mouseOld.x()), D_TO_INT64(m_mouseOld.y()), isCtrl);
 
         if(!catched && !isCtrl)
             clearSelection();
@@ -403,16 +398,16 @@ void PGE_EditScene::mouseMoveEvent(QMouseEvent *event)
     if((event->buttons() & Qt::LeftButton) == 0)
         return;
 
-    QPoint pos = mapToWorld(event->pos());
+    QPointF pos = mapToWorld(event->pos());
     bool doRepaint = false;
 
     if(m_ignoreMove)
         return;
 
-    QPoint delta = m_mouseOld - pos;
+    QPointF delta = m_mouseOld - pos;
     if(!m_rectSelect)
     {
-        moveSelection(-delta.x(), -delta.y());
+        moveSelection(-D_TO_INT64(delta.x()), -D_TO_INT64(delta.y()));
         doRepaint |= true;
     }
 
@@ -433,7 +428,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
     bool doRepaint = false;
     bool isShift = (event->modifiers() & Qt::ShiftModifier) != 0;
     bool isCtrl  = (event->modifiers() & Qt::ControlModifier) != 0;
-    QPoint pos = mapToWorld(event->pos());
+    QPointF pos = mapToWorld(event->pos());
 
     if(m_moveInProcess)
     {
@@ -474,21 +469,21 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
     if(!isShift && !isCtrl && (!m_selectedItems.isEmpty()) && (!m_mouseMoved))
     {
         clearSelection();
-        selectOneAt(m_mouseOld.x(), m_mouseOld.y());
+        selectOneAt(D_TO_INT64(m_mouseOld.x()), D_TO_INT64(m_mouseOld.y()));
         doRepaint |= true;
     }
     else if(m_rectSelect)
     {
-        int left   = m_mouseBegin.x() < m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
-        int right  = m_mouseBegin.x() > m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
-        int top    = m_mouseBegin.y() < m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
-        int bottom = m_mouseBegin.y() > m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
+        qreal left   = m_mouseBegin.x() < m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
+        qreal right  = m_mouseBegin.x() > m_mouseEnd.x() ? m_mouseBegin.x() : m_mouseEnd.x();
+        qreal top    = m_mouseBegin.y() < m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
+        qreal bottom = m_mouseBegin.y() > m_mouseEnd.y() ? m_mouseBegin.y() : m_mouseEnd.y();
 
         PGE_EditItemList list;
-        PGE_Rect<int> selZone;
-        RRect vizArea = {left, top, right, bottom};
-        selZone.setCoords(left, top, right, bottom);
-        queryItems(vizArea, &list);
+        PGE_Rect<int64_t> selZone;
+        //RRect vizArea = {left, top, right, bottom};
+        selZone.setCoords(D_TO_INT64(left), D_TO_INT64(top), D_TO_INT64(right), D_TO_INT64(bottom));
+        queryItems(selZone, &list);
         if(!list.isEmpty())
         {
             PGE_EditSceneItem *it = list.first();
@@ -501,7 +496,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
                     doSelect = true;
                 if(doSelect)
                 {
-                    PGE_Rect<int> &r = it->m_posRect;
+                    PGE_Rect<int64_t> &r = it->m_posRect;
                     m_selectionRect.setCoords(r.left(), r.top(), r.right(), r.bottom());
                 }
             }
@@ -579,11 +574,10 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
     }
 
     PGE_EditItemList list;
-    RRect vizArea = {m_cameraPos.x(),
-                     m_cameraPos.y(),
-                     m_cameraPos.x() + qRound(qreal(width()) / m_zoom),
-                     m_cameraPos.y() + qRound(qreal(height()) / m_zoom)
-                    };
+    PGE_Rect<int64_t> vizArea(D_TO_INT64(m_cameraPos.x()),
+                              D_TO_INT64(m_cameraPos.y()),
+                              D_TO_INT64(qreal(width()) / m_zoom),
+                              D_TO_INT64(qreal(height()) / m_zoom));
     queryItems(vizArea, &list);
 
     for(PGE_EditSceneItem *item : list)
@@ -596,7 +590,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
         p.setBrush(QBrush(Qt::green));
         p.setPen(QPen(Qt::darkGreen));
         p.setOpacity(0.5);
-        QRect r = applyZoom(QRect(m_mouseBegin, m_mouseOld));
+        QRectF r = applyZoom(QRectF(m_mouseBegin, m_mouseOld));
         p.drawRect(r);
     }
 
@@ -605,7 +599,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
         p.setBrush(QBrush(Qt::red));
         p.setPen(QPen(Qt::darkRed));
         p.setOpacity(0.2);
-        QRect r = applyZoom(m_selectionRect.toQRect());
+        QRectF r = applyZoom(m_selectionRect.toQRectF());
         p.drawRect(r);
     }
 

@@ -31,7 +31,7 @@ bool PGE_EditSceneItem::selected() const
     return m_selected;
 }
 
-bool PGE_EditSceneItem::isTouching(int x, int y) const
+bool PGE_EditSceneItem::isTouching(int64_t x, int64_t y) const
 {
     if(m_posRect.left() > x)
         return false;
@@ -65,7 +65,24 @@ bool PGE_EditSceneItem::isTouching(const QRect &rect) const
     return true;
 }
 
-bool PGE_EditSceneItem::isTouching(const PGE_Rect<int> &rect) const
+bool PGE_EditSceneItem::isTouching(const QRectF &rect) const
+{
+    if(m_posRect.left() > (rect.right() + 1))
+        return false;
+
+    if((m_posRect.right() + 1) < rect.left())
+        return false;
+
+    if(m_posRect.top() > (rect.bottom() + 1))
+        return false;
+
+    if((m_posRect.bottom() + 1) < rect.top())
+        return false;
+
+    return true;
+}
+
+bool PGE_EditSceneItem::isTouching(const PGE_Rect<int64_t> &rect) const
 {
     if(m_posRect.left() > rect.right())
         return false;
@@ -82,47 +99,47 @@ bool PGE_EditSceneItem::isTouching(const PGE_Rect<int> &rect) const
     return true;
 }
 
-int PGE_EditSceneItem::x() const
+int64_t PGE_EditSceneItem::x() const
 {
     return m_posRect.x();
 }
 
-int PGE_EditSceneItem::y() const
+int64_t PGE_EditSceneItem::y() const
 {
     return m_posRect.y();
 }
 
-int PGE_EditSceneItem::w() const
+int64_t PGE_EditSceneItem::w() const
 {
     return m_posRect.w();
 }
 
-int PGE_EditSceneItem::h() const
+int64_t PGE_EditSceneItem::h() const
 {
     return m_posRect.h();
 }
 
-int PGE_EditSceneItem::left() const
+int64_t PGE_EditSceneItem::left() const
 {
     return m_posRect.left();
 }
 
-int PGE_EditSceneItem::top() const
+int64_t PGE_EditSceneItem::top() const
 {
     return m_posRect.top();
 }
 
-int PGE_EditSceneItem::right() const
+int64_t PGE_EditSceneItem::right() const
 {
     return m_posRect.right();
 }
 
-int PGE_EditSceneItem::bottom() const
+int64_t PGE_EditSceneItem::bottom() const
 {
     return m_posRect.bottom();
 }
 
-void PGE_EditSceneItem::paint(QPainter *painter, const QPoint &camera, const double &zoom)
+void PGE_EditSceneItem::paint(QPainter *painter, const QPointF &camera, const double &zoom)
 {
     painter->setBrush(QColor(Qt::white));
     painter->setOpacity(1.0);

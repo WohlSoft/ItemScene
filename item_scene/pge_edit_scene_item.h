@@ -37,6 +37,10 @@ public:
     {
         return QRect(m_x, m_y, m_width, m_height);
     }
+    inline QRectF toQRectF() const
+    {
+        return QRectF(m_x, m_y, m_width, m_height);
+    }
     inline void reset()
     {
         m_x = 0;
@@ -198,12 +202,16 @@ public:
         m_y = t;
         m_right = r;
         m_bottom = b;
-        m_width = abs(m_right - m_x);
-        m_height = abs(m_bottom - m_y);
+        m_width = std::abs(m_right - m_x);
+        m_height = std::abs(m_bottom - m_y);
     }
     QPoint topLeft() const
     {
         return QPoint(m_x, m_y);
+    }
+    QPointF topLeftF() const
+    {
+        return QPointF(m_x, m_y);
     }
 };
 
@@ -223,25 +231,26 @@ public:
     void setSelected(bool selected);
     bool selected() const;
 
-    bool isTouching(int x, int y) const;
+    bool isTouching(int64_t x, int64_t y) const;
     bool isTouching(const QRect &rect) const;
-    bool isTouching(const PGE_Rect<int> &rect) const;
+    bool isTouching(const QRectF &rect) const;
+    bool isTouching(const PGE_Rect<int64_t> &rect) const;
 
-    int x() const;
-    int y() const;
-    int w() const;
-    int h() const;
+    int64_t x() const;
+    int64_t y() const;
+    int64_t w() const;
+    int64_t h() const;
 
-    int left() const;
-    int top() const;
-    int right() const;
-    int bottom() const;
+    int64_t left() const;
+    int64_t top() const;
+    int64_t right() const;
+    int64_t bottom() const;
 
-    virtual void paint(QPainter *painter, const QPoint &camera = QPoint(0, 0),
+    virtual void paint(QPainter *painter, const QPointF &camera = QPoint(0, 0),
                        const double &zoom = 1.0);
 
-    PGE_Rect<int> m_posRect;
-    PGE_Rect<int> m_posRectTree;
+    PGE_Rect<int64_t> m_posRect;
+    PGE_Rect<int64_t> m_posRectTree;
 };
 
 #endif // PGE_EDIT_SCENE_ITEM_H

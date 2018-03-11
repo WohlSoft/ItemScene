@@ -17,18 +17,25 @@ CONFIG(release, debug|release):message(Release build!) #will print
 CONFIG(debug, debug|release):message(Debug build!) #no print
 
 !macx: {
-QMAKE_CXXFLAGS += -ffloat-store
+    QMAKE_CXXFLAGS += -ffloat-store
 }
 
-SOURCES += main.cpp\
-        itemscene.cpp \
+SOURCES += \
+    main.cpp \
+    itemscene.cpp \
     item_scene/pge_edit_scene.cpp \
     item_scene/pge_edit_scene_item.cpp \
+    item_scene/pge_quad_tree.cpp \
     key_dropper.cpp
 
-HEADERS  += itemscene.h \
+HEADERS  += \
+    itemscene.h \
+    item_scene/RTree.h \
+    item_scene/LooseQuadtree.h \
+    item_scene/LooseQuadtree-impl.h \
     item_scene/pge_edit_scene.h \
     item_scene/pge_edit_scene_item.h \
+    item_scene/pge_quad_tree.h \
     key_dropper.h
 
 FORMS    += itemscene.ui

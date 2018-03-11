@@ -10,7 +10,9 @@
 #include <mutex>
 
 #include "pge_edit_scene_item.h"
-#include "RTree.h"
+#include "pge_quad_tree.h"
+
+#define D_TO_INT64(x) static_cast<int64_t>(std::round(x))
 
 class PGE_EditScene : public QWidget
 {
@@ -35,7 +37,7 @@ public:
      * @param deltaX Offset X
      * @param deltaY Offset Y
      */
-    void moveSelection(int deltaX, int deltaY);
+    void moveSelection(int64_t deltaX, int64_t deltaY);
 
     /**
      * @brief Calculate size of abstract rectangular zone
@@ -84,10 +86,9 @@ public:
     virtual void initThread();
 
     typedef QList<PGE_EditSceneItem *> PGE_EditItemList;
-    typedef RTree<PGE_EditSceneItem *, int, 2, int > IndexTree;
+    typedef PgeQuadTree IndexTree4;
     QList<PGE_EditSceneItem> m_items;
-    typedef int RPoint[2];
-    IndexTree m_tree;
+    IndexTree4 m_tree;
     struct RRect
     {
         int l;
@@ -100,21 +101,26 @@ public:
      * @param zone Rectangular area to collect elements
      * @param resultList Pointer to list where collected elements are will be stored
      */
-    void queryItems(RRect &zone,  PGE_EditItemList *resultList);
+    void queryItems(PGE_Rect<int64_t> &zone, PGE_EditItemList *resultList);
     /**
      * @brief Collect elements in the specific point
      * @param x Position X
      * @param y Position Y
      * @param resultList Pointer to list where collected elements are will be stored
      */
-    void queryItems(int x, int y, PGE_EditItemList *resultList);
+    void queryItems(int64_t x, int64_t y, PGE_EditItemList *resultList);
     /**
-     * @brief Register element in the RTree
+     * @brief Register element in the tree
      * @param item Pointer to element to register
      */
     void registerElement(PGE_EditSceneItem *item);
     /**
-     * @brief Unregister element from the RTree
+     * @brief Update registered element in the tree
+     * @param item Pointer to element to register
+     */
+    void updateElement(PGE_EditSceneItem *item);
+    /**
+     * @brief Unregister element from the tree
      * @param item Pointer to element to unregister
      */
     void unregisterElement(PGE_EditSceneItem *item);
@@ -123,13 +129,13 @@ public:
     //! Map of selected elements
     SelectionMap    m_selectedItems;
     //! Rectangular area around selected elements
-    PGE_Rect<int>   m_selectionRect;
+    PGE_Rect<int64_t>   m_selectionRect;
     //! Previous mouse position
-    QPoint          m_mouseOld;
+    QPointF         m_mouseOld;
     //! Mouse position since button press
-    QPoint          m_mouseBegin;
+    QPointF         m_mouseBegin;
     //! Mouse position since button releasing
-    QPoint          m_mouseEnd;
+    QPointF         m_mouseEnd;
 
     //! Is mouse moved after button pressing
     bool            m_mouseMoved;
@@ -143,7 +149,7 @@ public:
     bool            m_rectSelect;
 
     //! Camera position
-    QPoint          m_cameraPos;
+    QPointF         m_cameraPos;
     //! Zoom factor
     double          m_zoom;
 
@@ -152,9 +158,9 @@ public:
     QAtomicInteger<bool> m_abortThread;
 
     //! Map relative mouse cursor position to world coordinates
-    QPoint       mapToWorld(const QPoint &mousePos);
+    QPointF      mapToWorld(const QPointF &mousePos);
     //! Map world rectangle coordinates to screen with applying zoom factor
-    QRect        applyZoom(const QRect &r);
+    QRectF       applyZoom(const QRectF &r);
 
     struct Mover
     {
@@ -265,7 +271,8 @@ public:
 
     bool mouseOnScreen();
     bool onScreen(const QPoint &point);
-    bool onScreen(int x, int y);
+    bool onScreen(const QPointF &point);
+    bool onScreen(int64_t x, int64_t y);
 
     double zoom();
     double zoomPercents();
@@ -276,10 +283,10 @@ public:
 
     void moveCamera();
     void moveCamera(int deltaX, int deltaY);
-    void moveCameraUpdMouse(int deltaX, int deltaY);
-    void moveCameraTo(int x, int y);
+    void moveCameraUpdMouse(double deltaX, double deltaY);
+    void moveCameraTo(int64_t x, int64_t y);
 
-    bool selectOneAt(int x, int y, bool isCtrl = false);
+    bool selectOneAt(int64_t x, int64_t y, bool isCtrl = false);
 
     void closeEvent(QCloseEvent *event);
 
