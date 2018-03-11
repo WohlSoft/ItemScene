@@ -125,8 +125,9 @@ void PGE_EditScene::moveEnd(bool /*esc*/)
 
 void PGE_EditScene::startInitAsync()
 {
+    m_busyMessage = tr("Loading...");
+    m_busyIsClosing = false;
     m_isBusy.lock();
-    //m_isBusy = true;
     QtConcurrent::run<void>(this, &PGE_EditScene::initThread);
 }
 
@@ -146,6 +147,28 @@ void PGE_EditScene::initThread()
 threadEnd:
     m_isBusy.unlock();
     metaObject()->invokeMethod(this, "repaint", Qt::QueuedConnection);
+}
+
+void PGE_EditScene::startDeInitAsync()
+{
+    m_busyMessage = tr("Closing...");
+    m_busyIsClosing = true;
+    m_isBusy.lock();
+    QtConcurrent::run<void>(this, &PGE_EditScene::deInitThread);
+}
+
+void PGE_EditScene::deInitThread()
+{
+    if(!m_isBusy.owns_lock())
+        m_isBusy.lock();
+    metaObject()->invokeMethod(this, "repaint", Qt::QueuedConnection);
+
+    m_tree.clear();
+    m_items.clear();
+
+    m_busyIsClosing = false;
+    m_isBusy.unlock();
+    metaObject()->invokeMethod(this->parent(), "close", Qt::QueuedConnection);
 }
 
 static bool _TreeSearchCallback(PGE_EditSceneItem *item, void *arg)
@@ -339,13 +362,27 @@ void PGE_EditScene::closeEvent(QCloseEvent *event)
     bool wasBusy = m_isBusy.owns_lock();
     if(wasBusy)
     {
+        if(m_busyIsClosing)
+        {
+            event->ignore();
+            return;
+        }
         m_busyMutex.lock();
         m_busyMutex.unlock();
     }
 
-    if(wasBusy)
+    if(wasBusy && !m_busyIsClosing)
         QMessageBox::information(this, "Closed", "Ouuuuch.... :-P");
-    event->accept();
+
+    if(!m_items.empty())
+    {
+        startDeInitAsync();
+        qDebug() << "Close delayed - run clean-up";
+        event->ignore();
+    } else {
+        qDebug() << "Will be closed";
+        event->accept();
+    }
 }
 
 void PGE_EditScene::mousePressEvent(QMouseEvent *event)
@@ -560,7 +597,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
     {
         p.setBrush(QBrush(Qt::black));
         p.setPen(QPen(Qt::black));
-        p.drawText(QPointF(20.0, 20.0), "Loading...");
+        p.drawText(QPointF(20.0, 20.0), m_busyMessage);
         p.end();
         return;
     }
@@ -568,7 +605,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
     {
         p.setBrush(QBrush(Qt::black));
         p.setPen(QPen(Qt::black));
-        p.drawText(QPointF(20.0, 20.0), "Aborted :-(");
+        p.drawText(QPointF(20.0, 20.0), tr("Aborted :-("));
         p.end();
         return;
     }

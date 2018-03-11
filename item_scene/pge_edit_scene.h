@@ -84,6 +84,14 @@ public:
      * @brief Initializing processing function (running in the separated thread)
      */
     virtual void initThread();
+    /**
+     * @brief Begin asynchronius de-initialization process (scene window will be inactive, but application can be used)
+     */
+    virtual void startDeInitAsync();
+    /**
+     * @brief DeInitializing processing function (running in the separated thread)
+     */
+    virtual void deInitThread();
 
     typedef QList<PGE_EditSceneItem *> PGE_EditItemList;
     typedef PgeQuadTree IndexTree4;
@@ -154,6 +162,8 @@ public:
     double          m_zoom;
 
     std::mutex      m_busyMutex;
+    QString         m_busyMessage;
+    bool            m_busyIsClosing = false;
     std::unique_lock<std::mutex> m_isBusy;
     QAtomicInteger<bool> m_abortThread;
 
