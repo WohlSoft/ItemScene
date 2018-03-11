@@ -149,10 +149,10 @@ void PGE_EditSceneItem::paint(QPainter *painter, const QPointF &camera, const do
     else
         painter->setPen(QColor(Qt::black));
 
-    int x = qRound(double(m_posRect.x() - camera.x()) * zoom);
-    int y = qRound(double(m_posRect.y() - camera.y()) * zoom);
-    int w = qRound(double(m_posRect.w()) * zoom);
-    int h = qRound(double(m_posRect.h()) * zoom);
+    int x = static_cast<int>(qreal(m_posRect.x() - camera.x()) * zoom);
+    int y = static_cast<int>(qreal(m_posRect.y() - camera.y()) * zoom);
+    int w = static_cast<int>(qreal(m_posRect.w()) * zoom);
+    int h = static_cast<int>(qreal(m_posRect.h()) * zoom);
     painter->drawRect(x, y, w, h);
 }
 

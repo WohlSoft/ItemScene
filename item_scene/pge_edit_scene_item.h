@@ -250,7 +250,6 @@ public:
                        const double &zoom = 1.0);
 
     PGE_Rect<int64_t> m_posRect;
-    PGE_Rect<int64_t> m_posRectTree;
 };
 
 #endif // PGE_EDIT_SCENE_ITEM_H
