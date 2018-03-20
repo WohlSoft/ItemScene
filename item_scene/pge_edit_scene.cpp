@@ -32,16 +32,14 @@ PGE_EditScene::PGE_EditScene(QWidget *parent) :
 
 PGE_EditScene::~PGE_EditScene()
 {
-    m_tree.clear();
-    m_items.clear();
+    m_tree.clearAndDestroy();
 }
 
-void PGE_EditScene::addRect(int x, int y)
+void PGE_EditScene::addRect(int64_t x, int64_t y)
 {
-    PGE_EditSceneItem item(this);
-    item.m_posRect.setRect(x, y, 32, 32);
-    m_items.append(item);
-    registerElement(&m_items.last());
+    PGE_EditSceneItem *item = new PGE_EditSceneItem(this);
+    item->m_posRect.setRect(x, y, 32, 32);
+    registerElement(item);
 }
 
 void PGE_EditScene::clearSelection()
@@ -163,8 +161,7 @@ void PGE_EditScene::deInitThread()
         m_isBusy.lock();
     metaObject()->invokeMethod(this, "repaint", Qt::QueuedConnection);
 
-    m_tree.clear();
-    m_items.clear();
+    m_tree.clearAndDestroy();
 
     m_busyIsClosing = false;
     m_isBusy.unlock();
@@ -229,6 +226,24 @@ QRectF PGE_EditScene::applyZoom(const QRectF &r)
     t.setWidth(std::round(qreal(t.width()) * m_zoom));
     t.setHeight(std::round(qreal(t.height()) * m_zoom));
     return t;
+}
+
+void PGE_EditScene::deleteItem(PGE_EditSceneItem *item)
+{
+    if(item->m_selected)
+    {
+        m_selectedItems.remove(item);
+        m_selectionRect.reset();
+    }
+    m_tree.removeAndDestroy(item);
+}
+
+void PGE_EditScene::deleteSelectedItems()
+{
+    for(PGE_EditSceneItem *item : m_selectedItems)
+        m_tree.removeAndDestroy(item);
+    m_selectedItems.clear();
+    m_selectionRect.reset();
 }
 
 bool PGE_EditScene::mouseOnScreen()
@@ -374,7 +389,7 @@ void PGE_EditScene::closeEvent(QCloseEvent *event)
     if(wasBusy && !m_busyIsClosing)
         QMessageBox::information(this, "Closed", "Ouuuuch.... :-P");
 
-    if(!m_items.empty())
+    if(!m_tree.empty())
     {
         startDeInitAsync();
         qDebug() << "Close delayed - run clean-up";
@@ -389,6 +404,14 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
 {
     if(m_isBusy.owns_lock())
         return;
+
+    if((event->buttons() & Qt::MiddleButton) != 0)
+    {
+        QPointF pos = mapToWorld(event->pos());
+        addRect((int64_t)pos.x(), (int64_t)pos.y());
+        repaint();
+        return;
+    }
 
     if(event->button() != Qt::LeftButton)
         return;
@@ -702,6 +725,10 @@ void PGE_EditScene::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Shift:
         if(event->isAutoRepeat()) return;
         m_mover.setFaster(true);
+        break;
+    case Qt::Key_Delete:
+        deleteSelectedItems();
+        repaint();
         break;
     default:
         QWidget::keyPressEvent(event);

@@ -26,7 +26,7 @@ public:
      * @param x Position X
      * @param y Position Y
      */
-    void addRect(int x, int y);
+    void addRect(int64_t x, int64_t y);
 
     /**
      * @brief Clear selection list
@@ -93,9 +93,8 @@ public:
      */
     virtual void deInitThread();
 
-    typedef QList<PGE_EditSceneItem *> PGE_EditItemList;
+    typedef QVector<PGE_EditSceneItem *> PGE_EditItemList;
     typedef PgeQuadTree IndexTree4;
-    QList<PGE_EditSceneItem> m_items;
     IndexTree4 m_tree;
     struct RRect
     {
@@ -278,6 +277,9 @@ public:
             }
         }
     } m_mover;
+
+    void deleteItem(PGE_EditSceneItem *item);
+    void deleteSelectedItems();
 
     bool mouseOnScreen();
     bool onScreen(const QPoint &point);

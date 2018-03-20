@@ -1,5 +1,6 @@
-
 #include "pge_quad_tree.h"
+#include "pge_edit_scene_item.h"
+
 #include "LooseQuadtree.h"
 
 class QTreePGE_Phys_ObjectExtractor
@@ -18,6 +19,7 @@ struct PgeQuadTree_private
 {
     typedef loose_quadtree::LooseQuadtree<int64_t, PGE_EditSceneItem, QTreePGE_Phys_ObjectExtractor> IndexTreeQ;
     IndexTreeQ tree;
+    PgeQuadTree::ItemsSet items;
 };
 
 
@@ -30,6 +32,7 @@ PgeQuadTree::~PgeQuadTree()
 
 bool PgeQuadTree::insert(PGE_EditSceneItem *obj)
 {
+    p->items.insert(obj);
     return p->tree.Insert(obj);
 }
 
@@ -40,12 +43,37 @@ bool PgeQuadTree::update(PGE_EditSceneItem *obj)
 
 bool PgeQuadTree::remove(PGE_EditSceneItem *obj)
 {
+    p->items.remove(obj);
     return p->tree.Remove(obj);
+}
+
+bool PgeQuadTree::removeAndDestroy(PGE_EditSceneItem *obj)
+{
+    p->items.remove(obj);
+    bool ret = p->tree.Remove(obj);
+    if(!obj)
+        return false;
+    delete obj;
+    return ret;
 }
 
 void PgeQuadTree::clear()
 {
+    p->items.clear();
     p->tree.Clear();
+}
+
+void PgeQuadTree::clearAndDestroy()
+{
+    std::vector<PGE_EditSceneItem*> killList;
+    killList.reserve((size_t)p->items.size());
+    for(PGE_EditSceneItem *it : p->items)
+        killList.push_back(it);
+    p->items.clear();
+    for(PGE_EditSceneItem *it : killList)
+        delete it;
+    killList.clear();
+    clear();
 }
 
 void PgeQuadTree::query(PGE_Rect<int64_t> &zone, PgeQuadTree::t_resultCallback a_resultCallback, void *context)
@@ -56,4 +84,19 @@ void PgeQuadTree::query(PGE_Rect<int64_t> &zone, PgeQuadTree::t_resultCallback a
         a_resultCallback(q.GetCurrent(), context);
         q.Next();
     }
+}
+
+const PgeQuadTree::ItemsSet &PgeQuadTree::allItems()
+{
+    return p->items;
+}
+
+size_t PgeQuadTree::count()
+{
+    return (size_t)p->items.count();
+}
+
+bool PgeQuadTree::empty()
+{
+    return p->items.isEmpty();
 }

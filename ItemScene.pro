@@ -30,13 +30,13 @@ SOURCES += \
 
 HEADERS  += \
     itemscene.h \
-    item_scene/RTree.h \
     item_scene/LooseQuadtree.h \
     item_scene/LooseQuadtree-impl.h \
     item_scene/pge_edit_scene.h \
     item_scene/pge_edit_scene_item.h \
     item_scene/pge_quad_tree.h \
-    key_dropper.h
+    key_dropper.h \
+    item_scene/pge_rect.h
 
 FORMS    += itemscene.ui
 

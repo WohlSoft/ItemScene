@@ -69,7 +69,7 @@ void ItemScene::on_actionAdd80_triggered()
             e->addRect(x,  y + (offset ? 16 : 0));
             offset = !offset;
         }
-    w->setWindowTitle(windowTitle() + QString(" (totally items on this map: %1)").arg(e->m_items.count()));
+    w->setWindowTitle(windowTitle() + QString(" (totally items on this map: %1)").arg(e->m_tree.count()));
     w->show();
     setFocusProxy(w);
 }
