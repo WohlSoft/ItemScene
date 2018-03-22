@@ -76,7 +76,7 @@ void PgeQuadTree::clearAndDestroy()
     clear();
 }
 
-void PgeQuadTree::query(PGE_Rect<int64_t> &zone, PgeQuadTree::t_resultCallback a_resultCallback, void *context)
+void PgeQuadTree::query(PGE_Rect<int64_t> &zone, PgeQuadTree::t_resultCallback a_resultCallback, void *context) const
 {
     PgeQuadTree_private::IndexTreeQ::Query q = p->tree.QueryIntersectsRegion(loose_quadtree::BoundingBox<int64_t>(zone.x(), zone.y(), zone.width(), zone.height()));
     while(!q.EndOfQuery())
@@ -86,17 +86,17 @@ void PgeQuadTree::query(PGE_Rect<int64_t> &zone, PgeQuadTree::t_resultCallback a
     }
 }
 
-const PgeQuadTree::ItemsSet &PgeQuadTree::allItems()
+const PgeQuadTree::ItemsSet &PgeQuadTree::allItems() const
 {
     return p->items;
 }
 
-size_t PgeQuadTree::count()
+size_t PgeQuadTree::count() const
 {
     return (size_t)p->items.count();
 }
 
-bool PgeQuadTree::empty()
+bool PgeQuadTree::empty() const
 {
     return p->items.isEmpty();
 }

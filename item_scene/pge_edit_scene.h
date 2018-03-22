@@ -26,7 +26,7 @@ public:
      * @param x Position X
      * @param y Position Y
      */
-    void addRect(int64_t x, int64_t y);
+    PGE_EditSceneItem *addRect(int64_t x, int64_t y);
 
     /**
      * @brief Clear selection list
@@ -108,14 +108,14 @@ public:
      * @param zone Rectangular area to collect elements
      * @param resultList Pointer to list where collected elements are will be stored
      */
-    void queryItems(PGE_Rect<int64_t> &zone, PGE_EditItemList *resultList);
+    void queryItems(PGE_Rect<int64_t> &zone, PGE_EditItemList *resultList, bool requireChildren = true);
     /**
      * @brief Collect elements in the specific point
      * @param x Position X
      * @param y Position Y
      * @param resultList Pointer to list where collected elements are will be stored
      */
-    void queryItems(int64_t x, int64_t y, PGE_EditItemList *resultList);
+    void queryItems(int64_t x, int64_t y, PGE_EditItemList *resultList, bool requireChildren = true);
     /**
      * @brief Register element in the tree
      * @param item Pointer to element to register

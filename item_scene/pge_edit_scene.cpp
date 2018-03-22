@@ -35,11 +35,12 @@ PGE_EditScene::~PGE_EditScene()
     m_tree.clearAndDestroy();
 }
 
-void PGE_EditScene::addRect(int64_t x, int64_t y)
+PGE_EditSceneItem *PGE_EditScene::addRect(int64_t x, int64_t y)
 {
     PGE_EditSceneItem *item = new PGE_EditSceneItem(this);
     item->m_posRect.setRect(x, y, 32, 32);
     registerElement(item);
+    return item;
 }
 
 void PGE_EditScene::clearSelection()
@@ -168,25 +169,40 @@ void PGE_EditScene::deInitThread()
     metaObject()->invokeMethod(this->parent(), "close", Qt::QueuedConnection);
 }
 
+struct _TreeSearchQuery
+{
+    bool requireChildren;
+    PGE_EditScene::PGE_EditItemList *list;
+    PGE_Rect<int64_t> *zone;
+};
+
 static bool _TreeSearchCallback(PGE_EditSceneItem *item, void *arg)
 {
-    PGE_EditScene::PGE_EditItemList *list = static_cast<PGE_EditScene::PGE_EditItemList * >(arg);
+    _TreeSearchQuery* ar = static_cast<_TreeSearchQuery *>(arg);
+    PGE_EditScene::PGE_EditItemList *list = ar->list;
     if(list)
     {
-        if(item)(*list).push_back(item);
+        if(item)
+        {
+            (*list).push_back(item);
+            if(ar->requireChildren)
+                item->queryChildren(*(ar->zone), _TreeSearchCallback, arg);
+        }
     }
     return true;
 }
 
-void PGE_EditScene::queryItems(PGE_Rect<int64_t> &zone, PGE_EditScene::PGE_EditItemList *resultList)
+void PGE_EditScene::queryItems(PGE_Rect<int64_t> &zone, PGE_EditScene::PGE_EditItemList *resultList, bool requireChildren)
 {
-    m_tree.query(zone, _TreeSearchCallback, (void*)resultList);
+    _TreeSearchQuery query = {requireChildren, resultList, &zone};
+    m_tree.query(zone, _TreeSearchCallback, (void*)&query);
 }
 
-void PGE_EditScene::queryItems(int64_t x, int64_t y, PGE_EditScene::PGE_EditItemList *resultList)
+void PGE_EditScene::queryItems(int64_t x, int64_t y, PGE_EditScene::PGE_EditItemList *resultList, bool requireChildren)
 {
     PGE_Rect<int64_t> z(x, y, 1, 1);
-    m_tree.query(z, _TreeSearchCallback, resultList);
+    _TreeSearchQuery query = {requireChildren, resultList, &z};
+    m_tree.query(z, _TreeSearchCallback, (void*)&query);
 }
 
 void PGE_EditScene::registerElement(PGE_EditSceneItem *item)
@@ -349,7 +365,7 @@ bool PGE_EditScene::selectOneAt(int64_t x, int64_t y, bool isCtrl)
 {
     bool catched = false;
     PGE_EditItemList list;
-    queryItems(x, y, &list);
+    queryItems(x, y, &list, false);
     for(PGE_EditSceneItem *item : list)
     {
         if(item->isTouching(x, y))
@@ -405,10 +421,51 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
     if(m_isBusy.owns_lock())
         return;
 
+    bool isShift = (event->modifiers() & Qt::ShiftModifier) != 0;
+    bool isCtrl = (event->modifiers() & Qt::ControlModifier) != 0;
+
     if((event->buttons() & Qt::MiddleButton) != 0)
     {
         QPointF pos = mapToWorld(event->pos());
-        addRect((int64_t)pos.x(), (int64_t)pos.y());
+        PGE_EditSceneItem *rect = addRect((int64_t)pos.x(), (int64_t)pos.y());
+        if(isShift)
+        {
+            PGE_EditSceneItem *item, *item_prev;
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(-30, -30, 20, 20);
+            rect->addChild(item);
+
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(-30, +30, 20, 20);
+            rect->addChild(item);
+
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(+30, -30, 20, 20);
+            rect->addChild(item);
+
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(+30, +30, 20, 20);
+            rect->addChild(item);
+
+            item_prev = item;
+            //Child of child!
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(-10, -10, 10, 10);
+            item_prev->addChild(item);
+
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(-10, +10, 10, 10);
+            item_prev->addChild(item);
+
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(+10, -10, 10, 10);
+            item_prev->addChild(item);
+
+            item = new PGE_EditSceneItem(this);
+            item->m_posRect.setRect(+10, +10, 10, 10);
+            item_prev->addChild(item);
+        }
+
         repaint();
         return;
     }
@@ -421,9 +478,6 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
     m_mouseBegin = pos;
     m_mouseOld   = pos;
     m_mouseMoved = false;
-
-    bool isShift = (event->modifiers() & Qt::ShiftModifier) != 0;
-    bool isCtrl = (event->modifiers() & Qt::ControlModifier) != 0;
 
     if(!isShift)
     {
@@ -543,7 +597,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         PGE_Rect<int64_t> selZone;
         //RRect vizArea = {left, top, right, bottom};
         selZone.setCoords(D_TO_INT64(left), D_TO_INT64(top), D_TO_INT64(right), D_TO_INT64(bottom));
-        queryItems(selZone, &list);
+        queryItems(selZone, &list, false);
         if(!list.isEmpty())
         {
             PGE_EditSceneItem *it = list.first();
@@ -638,7 +692,7 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
                               D_TO_INT64(m_cameraPos.y()),
                               D_TO_INT64(qreal(width()) / m_zoom),
                               D_TO_INT64(qreal(height()) / m_zoom));
-    queryItems(vizArea, &list);
+    queryItems(vizArea, &list, true);
 
     for(PGE_EditSceneItem *item : list)
     {
