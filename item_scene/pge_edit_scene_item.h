@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <type_traits>
+#include <QGraphicsItem>
 #include "pge_rect.h"
 #include "pge_quad_tree.h"
 
@@ -10,24 +11,21 @@
 
 class QPainter;
 class PGE_EditScene;
-class PGE_EditSceneItem
+class PGE_EditSceneItem : public QGraphicsItem
 {
     friend class PGE_EditScene;
     PGE_EditScene *m_scene = nullptr;
     PGE_EditSceneItem *m_parent = nullptr;
     bool m_selected = false;
-    PgeQuadTree m_childrenTree;
     QTransform m_transform;
 
 public:
-    explicit PGE_EditSceneItem(PGE_EditScene *parent);
+    explicit PGE_EditSceneItem(PGE_EditScene *scene, QGraphicsItem *parent = nullptr);
     PGE_EditSceneItem(const PGE_EditSceneItem &it);
     virtual ~PGE_EditSceneItem();
 
     void setSelected(bool selected);
     bool selected() const;
-
-    void addChild(PGE_EditSceneItem *item);
 
     bool isTouching(int64_t x, int64_t y) const;
     bool isTouching(const QRect &rect) const;
@@ -56,10 +54,10 @@ public:
     int64_t right_abs() const;
     int64_t bottom_abs() const;
 
-    void queryChildren(PGE_Rect<int64_t> &zone, PgeQuadTree::t_resultCallback a_resultCallback, void *context) const;
+    virtual QRectF boundingRect() const;
+    PGE_Rect<int64_t> boundingRectI() const;
 
-    virtual void paint(QPainter *painter, const QPointF &camera = QPoint(0, 0),
-                       const double &zoom = 1.0);
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR);
 
     PGE_Rect<int64_t> m_posRect;
 };

@@ -8,10 +8,11 @@ class QTreePGE_Phys_ObjectExtractor
 public:
     static void ExtractBoundingBox(const PGE_EditSceneItem *object, loose_quadtree::BoundingBox<int64_t> *bbox)
     {
-        bbox->left      = object->m_posRect.x();
-        bbox->top       = object->m_posRect.y();
-        bbox->width     = object->m_posRect.w();
-        bbox->height    = object->m_posRect.h();
+        auto r = object->boundingRectI();
+        bbox->left      = r.x();
+        bbox->top       = r.y();
+        bbox->width     = r.width();
+        bbox->height    = r.height();
     }
 };
 

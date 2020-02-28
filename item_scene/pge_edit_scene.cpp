@@ -39,6 +39,7 @@ PGE_EditSceneItem *PGE_EditScene::addRect(int64_t x, int64_t y)
 {
     PGE_EditSceneItem *item = new PGE_EditSceneItem(this);
     item->m_posRect.setRect(x, y, 32, 32);
+    item->setPos(x, y);
     registerElement(item);
     return item;
 }
@@ -137,13 +138,18 @@ void PGE_EditScene::initThread()
 
     bool offset = false;
     for(int y = -1024; y < 32000; y += 32)
+    {
+        if(m_abortThread)
+            break;
         for(int x = -1024; x < 32000; x += 32)
         {
-            if(m_abortThread) goto threadEnd;
+            if(m_abortThread)
+                break;
             addRect(x,  y + (offset ? 16 : 0));
             offset = !offset;
         }
-threadEnd:
+    }
+
     m_isBusy.unlock();
     metaObject()->invokeMethod(this, "repaint", Qt::QueuedConnection);
 }
@@ -171,7 +177,6 @@ void PGE_EditScene::deInitThread()
 
 struct _TreeSearchQuery
 {
-    bool requireChildren;
     PGE_EditScene::PGE_EditItemList *list;
     PGE_Rect<int64_t> *zone;
 };
@@ -180,28 +185,23 @@ static bool _TreeSearchCallback(PGE_EditSceneItem *item, void *arg)
 {
     _TreeSearchQuery* ar = static_cast<_TreeSearchQuery *>(arg);
     PGE_EditScene::PGE_EditItemList *list = ar->list;
-    if(list)
+    if(list && item)
     {
-        if(item)
-        {
-            (*list).push_back(item);
-            if(ar->requireChildren)
-                item->queryChildren(*(ar->zone), _TreeSearchCallback, arg);
-        }
+        (*list).push_back(item);
     }
     return true;
 }
 
-void PGE_EditScene::queryItems(PGE_Rect<int64_t> &zone, PGE_EditScene::PGE_EditItemList *resultList, bool requireChildren)
+void PGE_EditScene::queryItems(PGE_Rect<int64_t> &zone, PGE_EditScene::PGE_EditItemList *resultList)
 {
-    _TreeSearchQuery query = {requireChildren, resultList, &zone};
+    _TreeSearchQuery query = {resultList, &zone};
     m_tree.query(zone, _TreeSearchCallback, (void*)&query);
 }
 
-void PGE_EditScene::queryItems(int64_t x, int64_t y, PGE_EditScene::PGE_EditItemList *resultList, bool requireChildren)
+void PGE_EditScene::queryItems(int64_t x, int64_t y, PGE_EditScene::PGE_EditItemList *resultList)
 {
     PGE_Rect<int64_t> z(x, y, 1, 1);
-    _TreeSearchQuery query = {requireChildren, resultList, &z};
+    _TreeSearchQuery query = {resultList, &z};
     m_tree.query(z, _TreeSearchCallback, (void*)&query);
 }
 
@@ -365,7 +365,7 @@ bool PGE_EditScene::selectOneAt(int64_t x, int64_t y, bool isCtrl)
 {
     bool catched = false;
     PGE_EditItemList list;
-    queryItems(x, y, &list, false);
+    queryItems(x, y, &list);
     for(PGE_EditSceneItem *item : list)
     {
         if(item->isTouching(x, y))
@@ -430,40 +430,58 @@ void PGE_EditScene::mousePressEvent(QMouseEvent *event)
         PGE_EditSceneItem *rect = addRect((int64_t)pos.x(), (int64_t)pos.y());
         if(isShift)
         {
+//            QGraphicsItemGroup *gr = new QGraphicsItemGroup(rect);
             PGE_EditSceneItem *item, *item_prev;
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, rect);
             item->m_posRect.setRect(-30, -30, 20, 20);
-            rect->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(rect);
+//            gr->addToGroup(item);
 
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, rect);
             item->m_posRect.setRect(-30, +30, 20, 20);
-            rect->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(rect);
+//            gr->addToGroup(item);
 
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, rect);
             item->m_posRect.setRect(+30, -30, 20, 20);
-            rect->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(rect);
+//            gr->addToGroup(item);
 
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, rect);
             item->m_posRect.setRect(+30, +30, 20, 20);
-            rect->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(rect);
+//            gr->addToGroup(item);
 
             item_prev = item;
+//            gr = new QGraphicsItemGroup(item);
             //Child of child!
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, item_prev);
             item->m_posRect.setRect(-10, -10, 10, 10);
-            item_prev->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(item_prev);
+//            gr->addToGroup(item);
 
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, item_prev);
             item->m_posRect.setRect(-10, +10, 10, 10);
-            item_prev->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(item_prev);
+//            gr->addToGroup(item);
 
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, item_prev);
             item->m_posRect.setRect(+10, -10, 10, 10);
-            item_prev->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(item_prev);
+//            gr->addToGroup(item);
 
-            item = new PGE_EditSceneItem(this);
+            item = new PGE_EditSceneItem(nullptr, item_prev);
             item->m_posRect.setRect(+10, +10, 10, 10);
-            item_prev->addChild(item);
+            item->setOpacity(0.5);
+            item->setParentItem(item_prev);
+//            gr->addToGroup(item);
         }
 
         repaint();
@@ -597,7 +615,7 @@ void PGE_EditScene::mouseReleaseEvent(QMouseEvent *event)
         PGE_Rect<int64_t> selZone;
         //RRect vizArea = {left, top, right, bottom};
         selZone.setCoords(D_TO_INT64(left), D_TO_INT64(top), D_TO_INT64(right), D_TO_INT64(bottom));
-        queryItems(selZone, &list, false);
+        queryItems(selZone, &list);
         if(!list.isEmpty())
         {
             PGE_EditSceneItem *it = list.first();
@@ -667,6 +685,30 @@ void PGE_EditScene::wheelEvent(QWheelEvent *event)
     }
 }
 
+void PGE_EditScene::drawSubtreeRecursive(QGraphicsItem *item, QPainter *painter,
+                                         QWidget *widget,
+                                         qreal parentOpacity)
+{
+    painter->save();
+    painter->setOpacity(parentOpacity * item->opacity());
+
+    auto br = item->boundingRect();
+    painter->translate(br.topLeft());
+    item->paint(painter, nullptr, widget);
+    if(!item->childItems().empty())
+    {
+        auto c = item->childItems();
+        for(auto *child : c)
+        {
+            if (!child->isVisible())
+                continue;
+            drawSubtreeRecursive(child, painter, widget, child->opacity());
+        }
+    }
+
+    painter->restore();
+}
+
 void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
 {
     QPainter p(this);
@@ -692,12 +734,34 @@ void PGE_EditScene::paintEvent(QPaintEvent */*event*/)
                               D_TO_INT64(m_cameraPos.y()),
                               D_TO_INT64(qreal(width()) / m_zoom),
                               D_TO_INT64(qreal(height()) / m_zoom));
-    queryItems(vizArea, &list, true);
+    queryItems(vizArea, &list);
+
+    p.save();
+    p.scale(m_zoom, m_zoom);
+    p.translate(-m_cameraPos); // Offset by camera location
 
     for(PGE_EditSceneItem *item : list)
     {
-        item->paint(&p, m_cameraPos, m_zoom);
+        if(!item->isVisible())
+            continue; // Don't draw invisible items
+        p.save();
+        p.translate(item->boundingRect().topLeft()); // Offset by item's location
+        p.setOpacity(item->opacity());
+        item->paint(&p, nullptr, this);
+        if(!item->childItems().empty())
+        {
+            auto c = item->childItems();
+            for(auto *child : c)
+            {
+                if (!child->isVisible())
+                    continue;
+                drawSubtreeRecursive(child, &p, this, child->opacity());
+            }
+        }
+        p.restore();
     }
+
+    p.restore();
 
     if(m_rectSelect)
     {

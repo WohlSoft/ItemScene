@@ -18,7 +18,7 @@ class PGE_EditScene : public QWidget
 {
     Q_OBJECT
 public:
-    explicit PGE_EditScene(QWidget *parent = 0);
+    explicit PGE_EditScene(QWidget *parent = nullptr);
     virtual ~PGE_EditScene();
 
     /**
@@ -108,14 +108,14 @@ public:
      * @param zone Rectangular area to collect elements
      * @param resultList Pointer to list where collected elements are will be stored
      */
-    void queryItems(PGE_Rect<int64_t> &zone, PGE_EditItemList *resultList, bool requireChildren = true);
+    void queryItems(PGE_Rect<int64_t> &zone, PGE_EditItemList *resultList);
     /**
      * @brief Collect elements in the specific point
      * @param x Position X
      * @param y Position Y
      * @param resultList Pointer to list where collected elements are will be stored
      */
-    void queryItems(int64_t x, int64_t y, PGE_EditItemList *resultList, bool requireChildren = true);
+    void queryItems(int64_t x, int64_t y, PGE_EditItemList *resultList);
     /**
      * @brief Register element in the tree
      * @param item Pointer to element to register
@@ -306,6 +306,9 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *event);
+
+    void drawSubtreeRecursive(QGraphicsItem *item, QPainter *painter, QWidget *widget, qreal parentOpacity);
+
     void paintEvent(QPaintEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
